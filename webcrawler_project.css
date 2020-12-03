@@ -1,0 +1,108 @@
+body {
+	margin-left: 0;
+	margin-right:0;
+}
+
+.mainmenu {
+	padding-top: 10px;
+	padding-left: 130px;
+	border:	4px solid black;
+	color: #ffff00;
+}
+
+.nav {
+	text-align: 130px;
+}
+
+.nav ul {
+	list-style-type: none;	
+	border: none;
+}
+
+.maincontent {
+	display: flex;
+	flex-direction: column;
+	margin-top: 30px;
+	margin-left: 0;
+	margin-right:0;
+	padding-top: 30px;
+	padding-bottom: 45px;
+}
+
+.maincontentheader {
+	margin-top: 5px;
+	background-color: #f2f2f2;
+	padding-top: 2px;
+	padding-left: 130px;
+	padding-right: 130px;
+	padding-bottom: 45px;
+}
+
+.maincontentheader span {
+	padding-left: 45px;
+	font-family: Arial;
+	font-size: 42px;
+	font-weight: 500;
+	line-height: 1.1;
+	text-shadow: 0 1px 8px #444;
+}
+
+.maincontentheader h1 {
+	font-family: Sans-Serif;
+	font-size: 26px;
+	font-weight: 400;
+	line-height: 1.1;
+}
+
+.rezeptheader {
+	display: flex;
+	flex-direction: row;
+}
+
+.rezeptname h2 {
+	font-family: Sans-Serif;
+	font-size: 26px;
+	font-weight: 400;
+	line-height: 1.1;
+}
+
+.rezeptbild {
+	margin-left: 20px;
+	padding-top: 2px;
+	width: 160px;
+	height: auto;
+}
+
+.maincontentbody {
+	padding-left: 130px;
+	padding-right: 130px;
+}
+
+.iframe {
+	padding-left: 130px;
+	padding-right: 130px;
+}
+
+.framedsite {
+	padding-left: 30px;
+}
+
+a:link {
+	color: #428bca;
+}
+a:visited {
+	color: grey;
+}
+
+table, th, td {
+	border: 1px solid black;
+}
+
+.showoffjs {
+	padding-left: 130px;
+	padding-right: 130px;
+}
+
+
+
+
