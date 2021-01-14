@@ -1,24 +1,24 @@
 package at.webCrawler;
 
 public class SearchTarget {
-    int idSearch;
+    int id;
     String keyword;
     int relevanz;
-    int FK_targetid;
+    int fk_targetid;
 
-    public SearchTarget(int idSearch, String keyword, int relevanz, int FK_targetid) {
-        this.idSearch = idSearch;
+    public SearchTarget(int id, String keyword, int relevanz, int fk_targetid) {
+        this.id = id;
         this.keyword = keyword;
         this.relevanz = relevanz;
-        this.FK_targetid = FK_targetid;
+        this.fk_targetid = fk_targetid;
     }
 
     public int getIdSearch() {
-        return idSearch;
+        return id;
     }
 
-    public void setIdSearch(int idSearch) {
-        this.idSearch = idSearch;
+    public void setIdSearch(int id) {
+        this.id = id;
     }
 
     public String getKeyword() {
@@ -37,11 +37,11 @@ public class SearchTarget {
         this.relevanz = relevanz;
     }
 
-    public int getFK_targetid() {
-        return FK_targetid;
+    public int getFk_targetid() {
+        return fk_targetid;
     }
 
-    public void setFK_targetid(int FK_targetid) {
-        this.FK_targetid = FK_targetid;
+    public void setFk_targetid(int fk_targetid) {
+        this.fk_targetid = fk_targetid;
     }
 }

@@ -3,47 +3,67 @@ package at.webCrawler;
 import java.sql.Timestamp;
 
 public class Target {
-    int id;
-    String url;
-    Timestamp date;
-    int nextvisit;
+    int targetId;
+    String targetUrl;
+    Timestamp targetDate;
+    int targetNextvisit;
+    String targetTitle;
+    String targetDescription;
 
-    public Target(int id, String url, Timestamp date, int nextvisit) {
-        this.id = id;
-        this.url = url;
-        this.date = date;
-        this.nextvisit = nextvisit;
+    public Target(int targetId, String targetUrl, Timestamp targetDate, int targetNextvisit, String targetTitle, String targetDescription) {
+        this.targetId = targetId;
+        this.targetUrl = targetUrl;
+        this.targetDate = targetDate;
+        this.targetNextvisit = targetNextvisit;
+        this.targetTitle = targetTitle;
+        this.targetDescription = targetDescription;
     }
 
-    public int getId() {
-        return id;
+    public int getTargetId() {
+        return targetId;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setTargetId(int targetId) {
+        this.targetId = targetId;
     }
 
-    public String getUrl() {
-        return url;
+    public String getTargetUrl() {
+        return targetUrl;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setTargetUrl(String targetUrl) {
+        this.targetUrl = targetUrl;
     }
 
-    public Timestamp getDate() {
-        return date;
+    public Timestamp getTargetDate() {
+        return targetDate;
     }
 
-    public void setDate(Timestamp date) {
-        this.date = date;
+    public void setTargetDate(Timestamp targetDate) {
+        this.targetDate = targetDate;
     }
 
-    public int getNextvisit() {
-        return nextvisit;
+    public int getTargetNextvisit() {
+        return targetNextvisit;
     }
 
-    public void setNextvisit(int nextvisit) {
-        this.nextvisit = nextvisit;
+    public void setTargetNextvisit(int targetNextvisit) {
+        this.targetNextvisit = targetNextvisit;
+    }
+
+    public String getTargetTitle() {
+        return targetTitle;
+    }
+
+    public void setTargetTitle(String targetTitle) {
+        this.targetTitle = targetTitle;
+    }
+
+    public String getTargetDescription() {
+        return targetDescription;
+    }
+
+    public void setTargetDescription(String targetDescription) {
+        this.targetDescription = targetDescription;
     }
 }
