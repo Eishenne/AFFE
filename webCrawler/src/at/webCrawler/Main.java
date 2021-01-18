@@ -10,10 +10,11 @@ import org.w3c.dom.Node;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.sql.*;
 import java.util.HashMap;
 import java.util.List;
 
-public class Main {
+public class Main<keywords> {
     /*
     Ablauf Roadmap
         *** Start Hauptprogramm
@@ -68,6 +69,7 @@ public class Main {
 
             //browser erzeugen
             webClient.getCache().clear();
+            webClient.getOptions().setThrowExceptionOnScriptError(false);
             HtmlPage page = webClient.getPage(nextURL);
 
             analyzePage(nextURL, page);
@@ -80,11 +82,24 @@ public class Main {
     public static String readDB_nextTarget() {
         String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
         //String targetUrl = "https://www.laendlejob.at";
+        //String targetUrl = "https://vol.at";
         //targetUrl = DataBaseFunction.readDbNextTarget();
         // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format -> Format anpassen
 
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+            String statement = "select url from target order by lastupdate IS NULL DESC, lastupdate  limit 1";
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                targetUrl = rs.getString(1);
+            }
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
 
-        // TODO: 12.01.2021 Read DB for the next URL
         return targetUrl;
     }
 
@@ -99,12 +114,12 @@ public class Main {
 
         int targetID = getTargetId(currentURL);
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
-        analyzeDescription(page.getBaseURL(), page.getHead(), targetID);
-        analyzePageTitle(targetID, page.getBaseURL(), page.getHead(), keywords);
+        String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetID);
+        String title = analyzePageTitle(targetID, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
         // TODO: 12.01.2021 Weitere Analyze for keyword generation
-        clearAndRegisterKeywords(targetID, keywords);
-        updateTargetNextVisit(targetID);
+        KeywordRegister.clearAndRegisterKeywords(targetID, keywords);
+        updateTargetNextVisit(targetID, title, description);
     }
 
     /**
@@ -116,15 +131,17 @@ public class Main {
      * @param htmlElement DomNode
      * @param keywords    HashMap<String, Integer>
      */
-    public static void analyzePageTitle(int targetId, URL currentURL, DomNode htmlElement, HashMap<String, Integer> keywords) {
+    public static String analyzePageTitle(int targetId, URL currentURL, DomNode htmlElement, HashMap<String, Integer> keywords) {
         //Html - <head> aus page lesen
         //-DomNode d ist eine Liste aller HtmlTags auf page
         //-die Children sind untergeordnete HtmlTags (zB.: meta, title, link)
         //Form 1
+        String title = "";
         for (DomNode d : htmlElement.getChildren()) {
             if ((d.getLocalName() != null) && (d.getLocalName().equals("title"))) {
                 //--schreibt den Inhalt des HtmlTag
                 System.out.println("Title: " + d.getTextContent());
+                title = d.getTextContent();
                 //Titel zu DB.target hinzufügen
                 // TODO: methode Titel zu DB.target hinzufügen
                 DataBaseFunction.writeDB_titel(d.getTextContent(), targetId);
@@ -166,12 +183,14 @@ public class Main {
         }
 
          */
+        return title;
     }
 
 
 
-    public static void analyzeDescription(URL currentURL, DomNode htmlElement, int targetId) {
+    public static String analyzeDescription(URL currentURL, DomNode htmlElement, int targetId) {
         // TODO: 12.01.2021 Search for description (MetaTag) and add to DB.target
+        String desciption = "";
         /*if (htmlElement.getNodeName().equals("meta")) {
             for (int i = 0; i < htmlElement.getAttributes().getLength(); i++) {
                 Node n = htmlElement.getAttributes().item(i);
@@ -202,22 +221,21 @@ public class Main {
                     String descriptionText = htmlElement.getAttributes().item(i + 1).getNodeValue();
                     //--schreibt den Inhalt des HtmlTag
                     System.out.println("Description: " + descriptionText);
-
+                    desciption = descriptionText;
                 }
             }
         }
 
         // TODO: 12.01.2021 Generate Description for the case no description defined on site
+        return desciption;
     }
 
-    public static void updateTargetNextVisit(int targetId) {
+    public static void updateTargetNextVisit(int targetId, String title, String description) {
         // TODO: 12.01.2021 Update DB target record
     }
 
 
-    public static void clearAndRegisterKeywords(int targetId, HashMap<String, Integer> keywords) {
-        // TODO: 12.01.2021 Remove kewords to an old target
-    }
+
 
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
         List<String> disabledKeywords = java.util.Arrays.asList(

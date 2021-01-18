@@ -20,6 +20,10 @@ public class UrlParser {
                 if (n.getNodeName().equals("href")) {
                     try {
                         String URLtext = currentURL.toURI().resolve(n.getNodeValue()).toString();
+                        int hashmarkPos = URLtext.indexOf("#");
+                        if (hashmarkPos > 0){
+                            URLtext = URLtext.substring(0, hashmarkPos);
+                        }
                         System.out.println("a: " + URLtext);
                         //DB auf vorhandene URL prüfen
                         int targetID = DataBaseFunction.readTargetId(URLtext);
