@@ -10,6 +10,10 @@ import org.w3c.dom.Node;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 
@@ -22,7 +26,6 @@ public class Main {
 
             //browser erzeugen
             webClient.getCache().clear();
-            webClient.getOptions().setThrowExceptionOnScriptError(false);
             HtmlPage page = webClient.getPage(nextURL);
 
             analyzePage(nextURL, page);
@@ -33,13 +36,26 @@ public class Main {
     }
 
     public static String readDB_nextTarget() {
-        String targetUrl = "";
-        targetUrl = DataBaseFunction.readDbNextTarget();
-        if (targetUrl.equals("")) {
-            targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
-            //String targetUrl = "https://www.laendlejob.at";
-            // TODO: 18.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format -> Format anpassen
+        String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
+        //String targetUrl = "https://www.laendlejob.at";
+        //String targetUrl = "https://vol.at";
+        //targetUrl = DataBaseFunction.readDbNextTarget();
+        // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format -> Format anpassen
+
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+            String statement = "select url from target order by lastupdate IS NULL DESC, lastupdate  limit 1";
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                targetUrl = rs.getString(1);
+            }
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
         }
+
         return targetUrl;
     }
 
@@ -54,18 +70,12 @@ public class Main {
 
         int targetID = getTargetId(currentURL);
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
-
-        String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetID);
-        String title = analyzePageTitle(targetID, page.getBaseURL(), page.getHead(), keywords);
+        analyzeDescription(page.getBaseURL(), page.getHead(), targetID);
+        analyzePageTitle(targetID, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
-        // TODO: 12.01.2021 Weitere Analyzen für keyword Erzeugung
-
+        // TODO: 12.01.2021 Weitere Analyze for keyword generation
         clearAndRegisterKeywords(targetID, keywords);
-        updateTargetNextVisit(targetID, title, description);
-
-//        printAttributes(page);
-//        printResultHeader(page.getPage(), page.getBaseURL());
-//        printDomTree(" ", page.getPage());
+        updateTargetNextVisit(targetID);
     }
 
     /**
@@ -78,18 +88,27 @@ public class Main {
      * @param keywords    HashMap<String, Integer>
      */
     public static String analyzePageTitle(int targetId, URL currentURL, DomNode htmlElement, HashMap<String, Integer> keywords) {
-        String titleText = "";
-
+        //Html - <head> aus page lesen
+        //-DomNode d ist eine Liste aller HtmlTags auf page
+        //-die Children sind untergeordnete HtmlTags (zB.: meta, title, link)
+        //Form 1
+        String title = "";
         for (DomNode d : htmlElement.getChildren()) {
-            if (d.getLocalName() != null) {
-                //Form 1
-                if (d.getLocalName().equals("title")) {
-                    //--schreibt den Inhalt des HtmlTag
-//                System.out.println("Title: " + d.getTextContent());
-                    titleText = d.getTextContent();
-                }
-                //Form 2
-                if (d.getLocalName().equals("meta")) {
+            if ((d.getLocalName() != null) && (d.getLocalName().equals("title"))) {
+                //--schreibt den Inhalt des HtmlTag
+                System.out.println("Title: " + d.getTextContent());
+                title = d.getTextContent();
+                //Titel zu DB.target hinzufügen
+                // TODO: methode Titel zu DB.target hinzufügen
+                DataBaseFunction.writeDB_titel(d.getTextContent(), targetId);
+
+                //Titel in Keywörter aufteilen
+                registerKeywords(d.getTextContent(), 5, keywords);
+
+            }
+
+        //Form 2
+        if (d.getLocalName().equals("meta")) {
                     //---für die Anzahl seiner Parameter/Attributes
                     for (int i = 0; i < d.getAttributes().getLength(); i++) {
                         Node n = d.getAttributes().item(i);
@@ -108,14 +127,11 @@ public class Main {
                 if (titleText.equals("")) {
                     titleText = "kein_Titel_gefunden";
                 }
-                //Titel zu DB.target hinzufügen
-                //DataBaseFunction.writeDB_titel(titleText, targetId);
-                //Titel in Keywörter aufteilen
-                registerKeywords(titleText, 5, keywords);
+
             }
-        }
-        return titleText;
-    }
+        return title;
+}
+
 
 
     public static String analyzeDescription(URL currentURL, DomNode htmlElement, int targetId) {
@@ -164,20 +180,40 @@ public class Main {
         // TODO: 12.01.2021 Generate Description in case no description defined on site
     }
 
-    public static void updateTargetNextVisit(int targetId, String title, String description) {
-        int nextvisit = 1440;
-        DataBaseFunction.writeDB_Nextvisit(targetId, title, description, nextvisit);
-        DataBaseFunction.writeDB_Datum(nextvisit, targetId);
+    public static boolean updateTargetNextVisit(int targetId, String title, String description) {
+        // TODO: 12.01.2021 Update DB target record
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+            String statement =
+//                    "UPDATE webcrawler.target"+
+//                    "SET title= ?, description = ?"+
+//                    "WHERE ID= ?;";
+
+                    "UPDATE target "+
+                            "SET title= ?, nextvisit= ?, description = ?, lastupdate = ?"+
+                            "WHERE id= ?;";
+
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+
+            ps.setString(1, title);
+            ps.setInt(2,1440);
+            ps.setString(3,description);
+            ps.setTimestamp(4, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setInt(5, targetId);
+            int rows = ps.executeUpdate();
+            return true;
+        } catch (SQLException exc) {
+            exc.printStackTrace();
+            return false;
+        } /* finally {                                                                  ??????????????????????????
+            con.closeDatabase();
+            con.close();
+        } */
     }
 
+
     public static void clearAndRegisterKeywords(int targetId, HashMap<String, Integer> keywords) {
-        // clear old keywords
-        DataBaseFunction.clearKeywords(targetId);
-        // Add all keywords to DB
-        for (String k : keywords.keySet()) {
-            //--keyword, relevanz, targetId an SQL übergeben
-            DataBaseFunction.writeKeyword(k, keywords.get(k), targetId);
-        }
+        // TODO: 12.01.2021 Remove kewords to an old target
     }
 
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
@@ -201,14 +237,12 @@ public class Main {
         }
     }
 
-
     public static void printDomTree(String prefix, DomNode htmlElement) {
         System.out.println(prefix + htmlElement.getNodeName());
         for (DomNode d : htmlElement.getChildren()) {
             printDomTree(prefix + "  ", d);
         }
     }
-
 
     /**
      * a href und h2 aus der Seite auslesen (REKURSIV)
@@ -245,54 +279,6 @@ public class Main {
 
         for (DomNode d : htmlElement.getChildren()) {
             printResultHeader(d, baseUrl);
-        }
-    }
-
-    /**
-     * prints a specific attribute from HTML-Tag
-     *
-     * @param page HTML page
-     */
-    public static void printAttributes(HtmlPage page) {
-        //Html - <head> aus page lesen
-        //-DomNode d ist eine Liste aller HtmlTags auf page
-        //-die Children sind untergeordnete HtmlTags (zB.: meta, title, link)
-//        for (DomNode d : page.getHead().getChildren()) {
-//            if (d.getLocalName() != null) {
-//                //--schreibt den HtmlTag
-//                System.out.println("name: " + d.getLocalName());
-//                //---für die Anzahl seiner Parameter(n.xxxAttributes())
-//                for (int i = 0; i < d.getAttributes().getLength(); i++) {
-//                    Node n = d.getAttributes().item(i);
-//                    //---schreibt Node-Typ / Parameter-Bezeichnung / Parameter-Wert
-//                    System.out.println(n.getNodeType() + " / " + n.getNodeName() + " / " + n.getNodeValue());
-//                }
-//            }
-//        }
-
-        for (DomNode d : page.getHead().getChildren()) {
-            if (d.getLocalName() != null) {
-                System.out.println("ok");
-                if (d.getLocalName().equals("meta")) {
-                    //found the tag we are looking for
-//                    System.out.println("meta gefunden");
-                    //--schreibt den HtmlTag
-//                    System.out.println("name: " + d.getLocalName());
-                    //---für die Anzahl seiner Parameter/Attributes
-                    for (int i = 0; i < d.getAttributes().getLength(); i++) {
-                        Node n = d.getAttributes().item(i);
-                        if ((n.getNodeName().equals("name")) && n.getNodeValue().equals("author")) {
-                            for (int j = 0; j < d.getAttributes().getLength(); j++) {
-                                Node m = d.getAttributes().item(i++);
-                                if (m.getNodeName().equals("content")) {
-//                                    System.out.println("contentNode: " + m.getNodeName());
-//                                    System.out.println("wert: " + m.getNodeValue());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }
