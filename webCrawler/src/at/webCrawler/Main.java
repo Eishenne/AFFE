@@ -10,7 +10,6 @@ import org.w3c.dom.Node;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 
@@ -23,6 +22,7 @@ public class Main {
 
             //browser erzeugen
             webClient.getCache().clear();
+            webClient.getOptions().setThrowExceptionOnScriptError(false);
             HtmlPage page = webClient.getPage(nextURL);
 
             analyzePage(nextURL, page);
@@ -54,12 +54,14 @@ public class Main {
 
         int targetID = getTargetId(currentURL);
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
-        analyzeDescription(page.getBaseURL(), page.getHead(), targetID);
-        analyzePageTitle(targetID, page.getBaseURL(), page.getHead(), keywords);
+
+        String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetID);
+        String title = analyzePageTitle(targetID, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
         // TODO: 12.01.2021 Weitere Analyzen für keyword Erzeugung
+
         clearAndRegisterKeywords(targetID, keywords);
-        updateTargetNextVisit(targetID);
+        updateTargetNextVisit(targetID, title, description);
 
 //        printAttributes(page);
 //        printResultHeader(page.getPage(), page.getBaseURL());
@@ -75,7 +77,7 @@ public class Main {
      * @param htmlElement DomNode
      * @param keywords    HashMap<String, Integer>
      */
-    public static void analyzePageTitle(int targetId, URL currentURL, DomNode htmlElement, HashMap<String, Integer> keywords) {
+    public static String analyzePageTitle(int targetId, URL currentURL, DomNode htmlElement, HashMap<String, Integer> keywords) {
         String titleText = "";
 
         for (DomNode d : htmlElement.getChildren()) {
@@ -107,15 +109,16 @@ public class Main {
                     titleText = "kein_Titel_gefunden";
                 }
                 //Titel zu DB.target hinzufügen
-                DataBaseFunction.writeDB_titel(titleText, targetId);
+                //DataBaseFunction.writeDB_titel(titleText, targetId);
                 //Titel in Keywörter aufteilen
                 registerKeywords(titleText, 5, keywords);
             }
         }
+        return titleText;
     }
 
 
-    public static void analyzeDescription(URL currentURL, DomNode htmlElement, int targetId) {
+    public static String analyzeDescription(URL currentURL, DomNode htmlElement, int targetId) {
         // TODO: 12.01.2021 Search for description (MetaTag) and add to DB.target
 
         String descriptionText = "";
@@ -153,22 +156,19 @@ public class Main {
                 if (descriptionText.equals("")) {
                     descriptionText = "keine_Beschreibung_gefunden";
                 }
-                DataBaseFunction.writeDB_Description(descriptionText, targetId);
-
-                // TODO: descriptionText in keywords erfassen
-
-
             }
-        }
 
+        }
+        //DataBaseFunction.writeDB_Description(descriptionText, targetId);
+        return descriptionText;
         // TODO: 12.01.2021 Generate Description in case no description defined on site
     }
 
-    public static void updateTargetNextVisit(int targetId) {
+    public static void updateTargetNextVisit(int targetId, String title, String description) {
         int nextvisit = 1440;
+        DataBaseFunction.writeDB_Nextvisit(targetId, title, description, nextvisit);
         DataBaseFunction.writeDB_Datum(nextvisit, targetId);
     }
-
 
     public static void clearAndRegisterKeywords(int targetId, HashMap<String, Integer> keywords) {
         // clear old keywords
@@ -179,7 +179,6 @@ public class Main {
             DataBaseFunction.writeKeyword(k, keywords.get(k), targetId);
         }
     }
-
 
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
         List<String> disabledKeywords = java.util.Arrays.asList(

@@ -272,6 +272,24 @@ public class DataBaseFunction {
 //        con.close();
     }
 
+    public static void writeDB_Nextvisit(int targetId,String title,String description,int nextvisit){
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+            String statement = "UPDATE webcrawler.target SET (lastupdate, nextvisit, title, description) VALUES (?, ?, ?, ?) WHERE id = ?;";
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+            ps.setTimestamp(1, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setInt(2, nextvisit);
+            ps.setString(3, title);
+            ps.setString(4, description);
+            ps.setInt(5, targetId);
+            int rows = ps.executeUpdate();
+        } catch (SQLException exc) {
+            exc.printStackTrace();
+        } /* finally {                                                                  ??????????????????????????
+            con.closeDatabase();
+            con.close();
+        } */
+    }
 
     public static boolean writeTargetRow(Target target) {
         int nextvisit = 1440;
