@@ -230,8 +230,35 @@ public class Main<keywords> {
         return desciption;
     }
 
-    public static void updateTargetNextVisit(int targetId, String title, String description) {
+    public static boolean updateTargetNextVisit(int targetId, String title, String description) {
         // TODO: 12.01.2021 Update DB target record
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+            String statement =
+//                    "UPDATE webcrawler.target"+
+//                    "SET title= ?, description = ?"+
+//                    "WHERE ID= ?;";
+
+            "UPDATE target "+
+                    "SET title= ?, nextvisit= ?, description = ?, lastupdate = ?"+
+                    "WHERE id= ?;";
+
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+
+            ps.setString(1, title);
+            ps.setInt(2,1440);
+            ps.setString(3,description);
+            ps.setTimestamp(4, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setInt(5, targetId);
+            int rows = ps.executeUpdate();
+            return true;
+        } catch (SQLException exc) {
+            exc.printStackTrace();
+            return false;
+        } /* finally {                                                                  ??????????????????????????
+            con.closeDatabase();
+            con.close();
+        } */
     }
 
 

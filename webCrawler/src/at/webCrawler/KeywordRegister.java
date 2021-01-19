@@ -1,7 +1,5 @@
 package at.webCrawler;
 
-import org.w3c.dom.Node;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
