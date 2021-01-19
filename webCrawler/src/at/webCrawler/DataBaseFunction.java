@@ -8,7 +8,6 @@ public class DataBaseFunction {
     /**
      * establishes and closes a connection to the DB
      * write a row into DB webcrawler.target
-     * !!!shouldnt write an entire entry, instead write only the url
      *
      * @return true if successfull
      * Todo: doesnt close the connection
@@ -26,11 +25,7 @@ public class DataBaseFunction {
             ps.setTimestamp(2, new java.sql.Timestamp(System.currentTimeMillis()));
             ps.setInt(3, nextvisit);
             ps.setString(4, "Methode searchAndCreateTitel");
-            //Todo: erstellen - createTitel()
-
             ps.setString(5, "Methode searchAndCreateDescription");
-            //Todo: erstellen - createDescription()
-
             int rows = ps.executeUpdate();
 
             //close connection when row is written ????
@@ -56,6 +51,7 @@ public class DataBaseFunction {
             con.close();
         } */
     }
+
 
     /**
      * returns true if URL not found in DB
@@ -85,6 +81,7 @@ public class DataBaseFunction {
             return false;
         }
     }
+
 
     /**
      * returns one complete row from DB.target
@@ -117,6 +114,7 @@ public class DataBaseFunction {
         }
         return t;
     }
+
 
     /**
      * returns the ID row from DB.target
@@ -162,6 +160,7 @@ public class DataBaseFunction {
         } */
     }
 
+
     public static boolean writeDB_titel(String titel, int targetId) {
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
@@ -179,6 +178,7 @@ public class DataBaseFunction {
             con.close();
         } */
     }
+
 
     public static boolean writeDB_Description(String textDescription, int targetId) {
         try {
@@ -198,6 +198,27 @@ public class DataBaseFunction {
         } */
     }
 
+
+    public static boolean writeDB_Datum(int nextVisit, int targetId) {
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+            String statement = "UPDATE webcrawler.target SET (lastupdate, nextvisit) VALUES (?, ?) WHERE id = ?;";
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+            ps.setTimestamp(1, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setInt(2, nextVisit);
+            ps.setInt(3, targetId);
+            int rows = ps.executeUpdate();
+            return true;
+        } catch (SQLException exc) {
+            exc.printStackTrace();
+            return false;
+        } /* finally {                                                                  ??????????????????????????
+            con.closeDatabase();
+            con.close();
+        } */
+    }
+
+
     public static String readDbNextTarget() {
         String nextTarget = "";
         try {
@@ -213,9 +234,44 @@ public class DataBaseFunction {
         } finally {
             DataBaseMaster.getInstance().closeDatabase();
         }
+        if (nextTarget.length()<6) {
+            System.out.println("nextvisit wird noch nicht berücksichtigt.");
+            // TODO: nextTarget aus lastupdate + nextvisit(Minuten)
+        }
         return nextTarget;
-
     }
+
+
+    public static void clearKeywords(int targetId) {
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+            String statement = "DELETE FROM webcrawler.searchresult WHERE FK_targetId = ?";
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+            ps.setInt(1, targetId);
+            int rows = ps.executeUpdate();
+        } catch (SQLException exc) {
+            exc.printStackTrace();
+        }
+    }
+
+
+    public static void writeKeyword(String keyword, int relevanz, int targetId){
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+            String statement = "INSERT INTO webcrawler.searchresult (keyword, relevanz, FK_targetId)\n" +
+                    "VALUES (?, ?, ? );";
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, keyword);
+            ps.setInt(2, relevanz);
+            ps.setInt(3, targetId);
+            int rows = ps.executeUpdate();
+        } catch (SQLException exc) {
+            exc.printStackTrace();
+        } //* finally {                                                                  ??????????????????????????
+//        con.closeDatabase();
+//        con.close();
+    }
+
 
     public static boolean writeTargetRow(Target target) {
         int nextvisit = 1440;
@@ -246,8 +302,4 @@ public class DataBaseFunction {
             con.close();
         } */
     }
-
-
-
-
 }
