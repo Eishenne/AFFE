@@ -36,7 +36,7 @@ public class DataBaseMaster {
         if (dbCon == null){
             try {
                 dbCon = DriverManager.getConnection("jdbc:mysql://localhost:3306/webcrawler?" +
-                        "serverTimezone=UTC", "khan", "123456");
+                        "serverTimezone=UTC", "abfrager", "abfrager");
             } catch (SQLException sqle){
                 sqle.printStackTrace();
             }

@@ -22,12 +22,14 @@ public class UrlParser {
                         if (hashmarkPos > 0){
                             URLtext = URLtext.substring(0, hashmarkPos);
                         }
-                        System.out.println("a: " + URLtext);
-                        //DB auf vorhandene URL prüfen
-                        int targetID = DataBaseFunction.readTargetId(URLtext);
-                        if (targetID < 0) {
-                            //DB row schreiben wenn URL nicht vorhanden
-                            DataBaseFunction.writeTargetUrl(URLtext);
+                        if (URLtext.startsWith("http")) {
+                            System.out.println("a: " + URLtext);
+                            //DB auf vorhandene URL prüfen
+                            int targetID = DataBaseFunction.readTargetId(URLtext);
+                            if (targetID < 0) {
+                                //DB row schreiben wenn URL nicht vorhanden
+                                DataBaseFunction.writeTargetUrl(URLtext);
+                            }
                         }
                     } catch (URISyntaxException use) {
                         System.out.println(use.getMessage());

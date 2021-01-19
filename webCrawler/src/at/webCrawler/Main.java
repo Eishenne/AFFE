@@ -10,10 +10,8 @@ import org.w3c.dom.Node;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.net.UnknownHostException;
+import java.sql.*;
 import java.util.HashMap;
 import java.util.List;
 
@@ -26,9 +24,14 @@ public class Main {
 
             //browser erzeugen
             webClient.getCache().clear();
-            HtmlPage page = webClient.getPage(nextURL);
-
-            analyzePage(nextURL, page);
+            webClient.getOptions().setThrowExceptionOnScriptError(false);
+            try {
+                HtmlPage page = webClient.getPage(nextURL);
+                analyzePage(nextURL, page);
+            } catch (UnknownHostException uhe){
+                // TODO: 19.01.2021 Clear not valid URL from target table
+                System.out.println(uhe.getMessage());
+            }
 
             // TODO: 12.01.2021 Define a practical Exit statement
             stop = true;
@@ -70,12 +73,12 @@ public class Main {
 
         int targetID = getTargetId(currentURL);
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
-        analyzeDescription(page.getBaseURL(), page.getHead(), targetID);
-        analyzePageTitle(targetID, page.getBaseURL(), page.getHead(), keywords);
+        String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetID);
+        String title = analyzePageTitle(targetID, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
         // TODO: 12.01.2021 Weitere Analyze for keyword generation
         clearAndRegisterKeywords(targetID, keywords);
-        updateTargetNextVisit(targetID);
+        updateTargetNextVisit(targetID, title, description);
     }
 
     /**
@@ -94,21 +97,18 @@ public class Main {
         //Form 1
         String title = "";
         for (DomNode d : htmlElement.getChildren()) {
-            if ((d.getLocalName() != null) && (d.getLocalName().equals("title"))) {
-                //--schreibt den Inhalt des HtmlTag
-                System.out.println("Title: " + d.getTextContent());
-                title = d.getTextContent();
-                //Titel zu DB.target hinzufügen
-                // TODO: methode Titel zu DB.target hinzufügen
-                DataBaseFunction.writeDB_titel(d.getTextContent(), targetId);
+            if (d.getLocalName() != null) {
+                if (d.getLocalName().equals("title")) {
+                    //--schreibt den Inhalt des HtmlTag
+                    System.out.println("Title: " + d.getTextContent());
+                    title = d.getTextContent();
+                    //Titel in Keywörter aufteilen
+                    registerKeywords(d.getTextContent(), 5, keywords);
 
-                //Titel in Keywörter aufteilen
-                registerKeywords(d.getTextContent(), 5, keywords);
+                }
 
-            }
-
-        //Form 2
-        if (d.getLocalName().equals("meta")) {
+                //Form 2
+                if (d.getLocalName().equals("meta")) {
                     //---für die Anzahl seiner Parameter/Attributes
                     for (int i = 0; i < d.getAttributes().getLength(); i++) {
                         Node n = d.getAttributes().item(i);
@@ -118,20 +118,20 @@ public class Main {
                                 if (m.getNodeName().equals("content")) {
 //                                    System.out.println("contentNode: " + m.getNodeName());
 //                                    System.out.println("wert: " + m.getNodeValue());
-                                    titleText = m.getNodeValue();
+                                    title = m.getNodeValue();
+                                    registerKeywords(title, 5, keywords);
                                 }
                             }
                         }
                     }
                 }
-                if (titleText.equals("")) {
-                    titleText = "kein_Titel_gefunden";
-                }
-
             }
+            if (title.equals("")) {
+                title = "kein_Titel_gefunden";
+            }
+        }
         return title;
-}
-
+    }
 
 
     public static String analyzeDescription(URL currentURL, DomNode htmlElement, int targetId) {
@@ -189,15 +189,15 @@ public class Main {
 //                    "SET title= ?, description = ?"+
 //                    "WHERE ID= ?;";
 
-                    "UPDATE target "+
-                            "SET title= ?, nextvisit= ?, description = ?, lastupdate = ?"+
+                    "UPDATE target " +
+                            "SET title= ?, nextvisit= ?, description = ?, lastupdate = ?" +
                             "WHERE id= ?;";
 
             PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
 
             ps.setString(1, title);
-            ps.setInt(2,1440);
-            ps.setString(3,description);
+            ps.setInt(2, 1440);
+            ps.setString(3, description.substring(0, 155));
             ps.setTimestamp(4, new java.sql.Timestamp(System.currentTimeMillis()));
             ps.setInt(5, targetId);
             int rows = ps.executeUpdate();
@@ -213,7 +213,12 @@ public class Main {
 
 
     public static void clearAndRegisterKeywords(int targetId, HashMap<String, Integer> keywords) {
-        // TODO: 12.01.2021 Remove kewords to an old target
+        DataBaseFunction.clearKeywords(targetId);
+        for (String k : keywords.keySet()) {
+            //--keyword, relevanz, targetId an SQL übergeben
+            DataBaseFunction.writeKeyword(k, keywords.get(k), targetId);
+        }
+
     }
 
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
