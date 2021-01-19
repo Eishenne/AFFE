@@ -33,6 +33,8 @@ public class UrlParser {
                         }
                     } catch (URISyntaxException use) {
                         System.out.println(use.getMessage());
+                    } catch (IllegalArgumentException iae) {
+                        System.out.println(iae.getMessage());
                     }
                 }
             }
