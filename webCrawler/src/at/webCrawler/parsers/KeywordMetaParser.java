@@ -18,7 +18,7 @@ public class KeywordMetaParser {
 
                 for (int i = 0; i < d.getAttributes().getLength(); i++) {
                     Node n = d.getAttributes().item(i);
-                    //--Link finden
+                    //keyword meta-tag finden
                     if (n.getNodeName().equals("name") && n.getNodeValue().equals("keywords")) {
                         keywordsFound = true;
                     }

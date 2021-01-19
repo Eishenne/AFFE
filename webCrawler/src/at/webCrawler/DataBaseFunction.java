@@ -46,10 +46,9 @@ public class DataBaseFunction {
         } catch (SQLException exc) {
             exc.printStackTrace();
             return false;
-        } /* finally {                                                                  ??????????????????????????
-            con.closeDatabase();
-            con.close();
-        } */
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
     }
 
 
@@ -79,6 +78,8 @@ public class DataBaseFunction {
         } catch (SQLException exc) {
             exc.printStackTrace();
             return false;
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
         }
     }
 
@@ -154,10 +155,9 @@ public class DataBaseFunction {
         } catch (SQLException exc) {
             exc.printStackTrace();
             return false;
-        } /* finally {                                                                  ??????????????????????????
-            con.closeDatabase();
-            con.close();
-        } */
+        }  finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
     }
 
 
@@ -173,10 +173,9 @@ public class DataBaseFunction {
         } catch (SQLException exc) {
             exc.printStackTrace();
             return false;
-        } /* finally {                                                                  ??????????????????????????
-            con.closeDatabase();
-            con.close();
-        } */
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
     }
 
 
@@ -192,10 +191,9 @@ public class DataBaseFunction {
         } catch (SQLException exc) {
             exc.printStackTrace();
             return false;
-        } /* finally {                                                                  ??????????????????????????
-            con.closeDatabase();
-            con.close();
-        } */
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
     }
 
 
@@ -212,10 +210,9 @@ public class DataBaseFunction {
         } catch (SQLException exc) {
             exc.printStackTrace();
             return false;
-        } /* finally {                                                                  ??????????????????????????
-            con.closeDatabase();
-            con.close();
-        } */
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
     }
 
 
@@ -251,6 +248,8 @@ public class DataBaseFunction {
             int rows = ps.executeUpdate();
         } catch (SQLException exc) {
             exc.printStackTrace();
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
         }
     }
 
@@ -258,7 +257,7 @@ public class DataBaseFunction {
     public static void writeKeyword(String keyword, int relevanz, int targetId){
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
-            String statement = "INSERT INTO webcrawler.searchresult (keyword, relevanz, FK_targetId)\n" +
+            String statement = "INSERT INTO webcrawler.searchresult (keyword, relevanz, FK_targetId) " +
                     "VALUES (?, ?, ? );";
             PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, keyword);
@@ -267,9 +266,9 @@ public class DataBaseFunction {
             int rows = ps.executeUpdate();
         } catch (SQLException exc) {
             exc.printStackTrace();
-        } //* finally {                                                                  ??????????????????????????
-//        con.closeDatabase();
-//        con.close();
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
     }
 
     public static void writeDB_Nextvisit(int targetId,String title,String description,int nextvisit){
@@ -285,10 +284,9 @@ public class DataBaseFunction {
             int rows = ps.executeUpdate();
         } catch (SQLException exc) {
             exc.printStackTrace();
-        } /* finally {                                                                  ??????????????????????????
-            con.closeDatabase();
-            con.close();
-        } */
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
     }
 
     public static boolean writeTargetRow(Target target) {
@@ -315,9 +313,8 @@ public class DataBaseFunction {
         } catch (SQLException exc) {
             exc.printStackTrace();
             return false;
-        } /* finally {                                                                  ??????????????????????????
-            con.closeDatabase();
-            con.close();
-        } */
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
     }
 }

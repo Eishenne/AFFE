@@ -20,7 +20,7 @@ public class Main {
         WebClient webClient = new WebClient();
         boolean stop = false;
         while (!stop) {
-            String nextURL = readDB_nextTarget();
+            String nextURL = readDB_nextTarget(stop);
 
             //browser erzeugen
             webClient.getCache().clear();
@@ -34,11 +34,13 @@ public class Main {
             }
 
             // TODO: 12.01.2021 Define a practical Exit statement
-            stop = true;
+
+            //stop = true;
         }
     }
 
-    public static String readDB_nextTarget() {
+    public static String readDB_nextTarget(boolean stop) {
+        //int controller = -1;  // index for entire DB up to date, <0 = not up to date, >ß = up to date
         String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
         //String targetUrl = "https://www.laendlejob.at";
         //String targetUrl = "https://vol.at";
@@ -52,7 +54,12 @@ public class Main {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 targetUrl = rs.getString(1);
+                //controller = 1;
             }
+            //controller for exit
+//            if (controller > 0) {
+//                stop = true;
+//            }
         } catch (SQLException sqle) {
             sqle.printStackTrace();
         } finally {
@@ -63,22 +70,22 @@ public class Main {
     }
 
     public static int getTargetId(String currentURL) {
-        int targetID = DataBaseFunction.readTargetId(currentURL);
-        return targetID;
+        int targetId = DataBaseFunction.readTargetId(currentURL);
+        return targetId;
     }
 
 
     public static void analyzePage(String currentURL, HtmlPage page) {
         HashMap<String, Integer> keywords = new HashMap<>();
 
-        int targetID = getTargetId(currentURL);
+        int targetId = getTargetId(currentURL);
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
-        String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetID);
-        String title = analyzePageTitle(targetID, page.getBaseURL(), page.getHead(), keywords);
+        String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
+        String title = analyzePageTitle(targetId, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
         // TODO: 12.01.2021 Weitere Analyze for keyword generation
-        clearAndRegisterKeywords(targetID, keywords);
-        updateTargetNextVisit(targetID, title, description);
+        clearAndRegisterKeywords(targetId, keywords);
+        updateTargetNextVisit(targetId, title, description);
     }
 
     /**
@@ -91,11 +98,8 @@ public class Main {
      * @param keywords    HashMap<String, Integer>
      */
     public static String analyzePageTitle(int targetId, URL currentURL, DomNode htmlElement, HashMap<String, Integer> keywords) {
-        //Html - <head> aus page lesen
-        //-DomNode d ist eine Liste aller HtmlTags auf page
-        //-die Children sind untergeordnete HtmlTags (zB.: meta, title, link)
-        //Form 1
         String title = "";
+        //Form 1
         for (DomNode d : htmlElement.getChildren()) {
             if (d.getLocalName() != null) {
                 if (d.getLocalName().equals("title")) {
@@ -104,7 +108,6 @@ public class Main {
                     title = d.getTextContent();
                     //Titel in Keywörter aufteilen
                     registerKeywords(d.getTextContent(), 5, keywords);
-
                 }
 
                 //Form 2
@@ -126,20 +129,17 @@ public class Main {
                     }
                 }
             }
-            if (title.equals("")) {
-                title = "kein_Titel_gefunden";
-            }
+//            if (title.equals("")) {
+//                title = "kein_Titel_gefunden";
+//            }
         }
         return title;
     }
 
 
     public static String analyzeDescription(URL currentURL, DomNode htmlElement, int targetId) {
-        // TODO: 12.01.2021 Search for description (MetaTag) and add to DB.target
-
         String descriptionText = "";
 
-        //for (DomNode d : page.getHead().getChildren()) {
         for (DomNode d : htmlElement.getChildren()) {
             if (d.getLocalName() != null) {
                 //description aus <meta name="description" content="beschreibung der seite">
@@ -169,9 +169,9 @@ public class Main {
                 }
 
                 //descriptionText an DB übertragen
-                if (descriptionText.equals("")) {
-                    descriptionText = "keine_Beschreibung_gefunden";
-                }
+//                if (descriptionText.equals("")) {
+//                    descriptionText = "keine_Beschreibung_gefunden";
+//                }
             }
 
         }
@@ -181,14 +181,16 @@ public class Main {
     }
 
     public static boolean updateTargetNextVisit(int targetId, String title, String description) {
-        // TODO: 12.01.2021 Update DB target record
+        if (description.length()>164) {
+            description = description.substring(0, 155);
+        }
+        if (title.length()>124) {
+            title = title.substring(0, 124);
+        }
+
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
             String statement =
-//                    "UPDATE webcrawler.target"+
-//                    "SET title= ?, description = ?"+
-//                    "WHERE ID= ?;";
-
                     "UPDATE target " +
                             "SET title= ?, nextvisit= ?, description = ?, lastupdate = ?" +
                             "WHERE id= ?;";
@@ -197,7 +199,7 @@ public class Main {
 
             ps.setString(1, title);
             ps.setInt(2, 1440);
-            ps.setString(3, description.substring(0, 155));
+            ps.setString(3, description);
             ps.setTimestamp(4, new java.sql.Timestamp(System.currentTimeMillis()));
             ps.setInt(5, targetId);
             int rows = ps.executeUpdate();
