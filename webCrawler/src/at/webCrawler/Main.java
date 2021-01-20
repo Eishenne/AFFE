@@ -3,19 +3,22 @@ package at.webCrawler;
 import at.webCrawler.parsers.KeywordHeaderParser;
 import at.webCrawler.parsers.KeywordMetaParser;
 import at.webCrawler.parsers.UrlParser;
-import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
+import at.webCrawler.tool.FileReader;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import org.w3c.dom.Node;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Scanner;
 
 public class Main {
     //TODO: java.sql.* anpassen auf benötigte SQL imports und diese einzeln importieren
@@ -73,7 +76,7 @@ public class Main {
 
             stop = false;
 
-            if (countReadPages >= 200) {
+            if (countReadPages >= 5) {
                 stop = true;
             } else {
                 ++countReadPages;
@@ -243,49 +246,8 @@ public class Main {
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
         //Blacklist Bindewörter
         //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache / meta charset?
-        List<String> disabledKeywords = java.util.Arrays.asList(
-                new String[]{
-                        //deutsch
-                        //Pronomen
-                        "ich", "du", "er", "sie", "es", "wir", "ihr", "sie",
-                        "meiner", "deiner", "seiner", "ihrer", "unser", "euer",
-                        "mir", "dir", "ihm", "uns", "euch", "ihnen",
-                        "mich", "dich", "ihn",
-                        //Artikel
-                        "der", "die", "das", "den", "des", "dem",
-                        //Fragewörter
-                        "wer", "wie", "was", "wieso", "weshalb", "warum", "wo", "wann", "wessen", "wem", "wohin",
-                        "woran", "woher", "wieviele", "wieviel",
-                        "ist", "sein", "und", "oder", "auf", "nach", "oben", "hinten", "links", "rechts", "rechte",
-                        "oft", "zum", "zur", "bei", "kommt", "mit", "alle", "dass", "dein", "deine",
-                        "meine", "seine", "diese", "dieser", "klein", "kleine", "kleiner", "kleinen", "große", "als",
-                        "von", "vom", "voll", "mal", "ersten", "oder", "ihre", "ihrer", "über", "uns", "also",
-                        "grenznah", "frau", "stunde", "inner", "schnell", "bereich", "werden", "sind", "durch",
-                        "können", "jetzt", "aus", "unser", "unsere", "unserer", "less", "such", "finden", "bis",
-                        "nicht", "beim", "auch", "sich", "ein", "eine", "eins", "einen", "einer", "einem", "kein",
-                        "keines", "keiner", "mehr", "noch", "doch", "", "%---%",
-                        //english
-                        //Pronomen
-                        //Artikel
-                        //Fragewörter
-                        "i", "you", "he", "she", "it", "we", "them", "they", "why", "when", "how", "where", "what",
-                        "which", "was", "for", "other", "there", "these", "those", "their", "they", "them", "are",
-                        "who", "is", "the", "this", "that", "he", "she", "his", "her", "have", "minute", "hours",
-                        "and", "with", "back", "eye", "reveal", "us", "our", "said", "–relaunch", "make", "long", "or",
-                        "sold", "told", "big", "medium", "small", "its", "seeing", "rocket", "cancel", "here",
-                        "backed", "your", "you", "all", "children", "use", "on", "off", "replay", "share", "pizza",
-                        "best", "forever", "left", "right", "rights", "out", "top", "from", "more", "get", "first",
-                        "second", "third", "can", "may", "form", "know", "now", "no", "time", "will", "into", "free",
-                        "across", "corss", "one", "like", "keep", "most", "need", "changing", "next", "through",
-                        "real", "better", "similar", "wir", "see", "any", "life", "show", "usage", "find", "outside",
-                        "overview", "stay", "footer", "improve", "change", "here", "home", "exercise", "shield",
-                        "open", "whom", "want", "full", "only", "listen", "east", "over", "useful", "quick", "easy",
-                        "middle", "please", "some", "trust", "thank", "thanks", "than", "payment", "end", "made",
-                        "white", "way", "increase", "decrease", "reach", "reaching", "between", "should", "house",
-                        "hard", "but", "smart", "decision", "become", "becomes", "self", "behalf", "high", "family",
-                        "love", "good", "grow", "buy", "button", "did", "take", "fraud", "own", "thing", "things",
-                        "think", "thinks", "down", "up", "side", "%'s", "%´s", "%`s", "'ve", "´ve", "%`ve"});
-
+        List<String> disabledKeywords = FileReader.blackListKeyword();
+//        String[] disabledKeywords = blackListKeyword();
         //alles was kein Schriftzeichen ist entfernen, ö.ä,ü bleiben bestehen
         textForKeywords = textForKeywords.replaceAll("[\\p{Punct}]+", " ")
                 .replaceAll("[\\p{Digit}]+", " ") //alle Zahlen ...
@@ -368,4 +330,5 @@ public class Main {
 //        sb.append("total free memory: " + format.format((freeMemory + (maxMemory - allocatedMemory)) / 1024) + "\n");
         System.out.println(sb);
     }
+
 }
