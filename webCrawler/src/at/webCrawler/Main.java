@@ -31,11 +31,14 @@ public class Main {
             } catch (UnknownHostException uhe){
                 // TODO: 19.01.2021 Clear not valid URL from target table
                 System.out.println(uhe.getMessage());
+
+            }catch (IllegalArgumentException iae){
+                System.out.println(iae.getMessage());
             }
 
             // TODO: 12.01.2021 Define a practical Exit statement
 
-            //stop = true;
+            stop = true;
         }
     }
 
@@ -181,12 +184,12 @@ public class Main {
     }
 
     public static boolean updateTargetNextVisit(int targetId, String title, String description) {
-        if (description.length()>164) {
-            description = description.substring(0, 155);
-        }
-        if (title.length()>124) {
-            title = title.substring(0, 124);
-        }
+//        if (description.length()>164) {
+//            description = description.substring(0, 155);
+//        }
+//        if (title.length()>124) {
+//            title = title.substring(0, 124);
+//        }
 
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
