@@ -21,19 +21,26 @@ public class Main {
         boolean stop = false;
         while (!stop) {
             String nextURL = readDB_nextTarget(stop);
+            int targetId = getTargetId(nextURL);
 
             //browser erzeugen
             webClient.getCache().clear();
             webClient.getOptions().setThrowExceptionOnScriptError(false);
             try {
+                System.out.println("Load URL: " + nextURL);
                 HtmlPage page = webClient.getPage(nextURL);
                 analyzePage(nextURL, page);
             } catch (UnknownHostException uhe){
                 // TODO: 19.01.2021 Clear not valid URL from target table
                 System.out.println(uhe.getMessage());
-
+                updateTargetNextVisit(targetId, "UnknownHostException", "");
             }catch (IllegalArgumentException iae){
                 System.out.println(iae.getMessage());
+                updateTargetNextVisit(targetId, "IllegalArgumentException", "");
+            }
+            catch (ClassCastException cc){
+                System.out.println(cc.getMessage());
+                updateTargetNextVisit(targetId, "ClassCastException", "");
             }
 
             // TODO: 12.01.2021 Define a practical Exit statement
