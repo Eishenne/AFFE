@@ -34,11 +34,10 @@ public class Main {
                 // TODO: 19.01.2021 Clear not valid URL from target table
                 System.out.println(uhe.getMessage());
                 updateTargetNextVisit(targetId, "UnknownHostException", "");
-            }catch (IllegalArgumentException iae){
+            } catch (IllegalArgumentException iae){
                 System.out.println(iae.getMessage());
                 updateTargetNextVisit(targetId, "IllegalArgumentException", "");
-            }
-            catch (ClassCastException cc){
+            } catch (ClassCastException cc){
                 System.out.println(cc.getMessage());
                 updateTargetNextVisit(targetId, "ClassCastException", "");
             }
