@@ -78,8 +78,9 @@ public class Main {
     }
 
     public static String readDB_nextTarget(boolean stop) {
-        //String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
-        String targetUrl = "https://www.laendlejob.at";
+        //int controller = -1;  // index for entire DB up to date, <0 = not up to date, >ß = up to date
+        String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
+        //String targetUrl = "https://www.laendlejob.at";
         //String targetUrl = "https://vol.at";
         //targetUrl = DataBaseFunction.readDbNextTarget();
         // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format -> Format anpassen
@@ -120,8 +121,9 @@ public class Main {
         String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
         String title = analyzePageTitle(targetId, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
+        // TODO: 12.01.2021 Weitere Analyze for keyword generation
         KeywordHeaderParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
-        clearAndRegisterKeywords(targetId, keywords);
+	clearAndRegisterKeywords(targetId, keywords);
         updateTargetNextVisit(targetId, title, description);
     }
 
