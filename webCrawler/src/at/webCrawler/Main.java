@@ -1,7 +1,9 @@
 package at.webCrawler;
 
+import at.webCrawler.parsers.KeywordHeaderParser;
 import at.webCrawler.parsers.KeywordMetaParser;
 import at.webCrawler.parsers.UrlParser;
+import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
@@ -12,14 +14,18 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.sql.*;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws IOException {
         WebClient webClient = new WebClient();
+        int countReadPages = 0;
         boolean stop = false;
         while (!stop) {
+            System.gc();
+            printMemory();
             String nextURL = readDB_nextTarget(stop);
             int targetId = getTargetId(nextURL);
 
@@ -30,29 +36,50 @@ public class Main {
                 System.out.println("Load URL: " + nextURL);
                 HtmlPage page = webClient.getPage(nextURL);
                 analyzePage(nextURL, page);
-            } catch (UnknownHostException uhe){
-                // TODO: 19.01.2021 Clear not valid URL from target table
-                System.out.println(uhe.getMessage());
-                updateTargetNextVisit(targetId, "UnknownHostException", "");
-            }catch (IllegalArgumentException iae){
-                System.out.println(iae.getMessage());
-                updateTargetNextVisit(targetId, "IllegalArgumentException", "");
+
+            }catch (Exception e) {
+                System.out.println(e.getMessage());
+                updateTargetNextVisit(targetId, "Exception", "");
+            } catch(Error err) {
+                err.printStackTrace();
+                updateTargetNextVisit(targetId, err.getClass().getSimpleName(), "");
+            } finally {
+                webClient.close();
+                webClient = new WebClient();
             }
-            catch (ClassCastException cc){
-                System.out.println(cc.getMessage());
-                updateTargetNextVisit(targetId, "ClassCastException", "");
-            }
+//           catch (UnknownHostException uhe) {
+//                System.out.println(uhe.getMessage());
+//                updateTargetNextVisit(targetId, "UnknownHostException", "");
+//            } catch (IllegalArgumentException iae) {
+//                System.out.println(iae.getMessage());
+//                updateTargetNextVisit(targetId, "IllegalArgumentException", "");
+//            }catch (NullPointerException npe){
+//                System.out.println(npe.getMessage());
+//                updateTargetNextVisit(targetId,"NullPointerException", "");
+//            } catch (ClassCastException cce) {
+//                System.out.println(cce.getMessage());
+//                updateTargetNextVisit(targetId, "ClassCastException", "");
+//            } catch (FailingHttpStatusCodeException fhsce) {
+//                System.out.println(fhsce.getMessage());
+//                updateTargetNextVisit(targetId, "FailingHttpStatusCodeException", "");
+//            }
 
             // TODO: 12.01.2021 Define a practical Exit statement
 
-            stop = true;
+            stop = false;
+
+            if (countReadPages >= 200) {
+                stop = true;
+            } else {
+                ++countReadPages;
+            }
+
         }
     }
 
     public static String readDB_nextTarget(boolean stop) {
-        //int controller = -1;  // index for entire DB up to date, <0 = not up to date, >ß = up to date
-        String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
-        //String targetUrl = "https://www.laendlejob.at";
+        //String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
+        String targetUrl = "https://www.laendlejob.at";
         //String targetUrl = "https://vol.at";
         //targetUrl = DataBaseFunction.readDbNextTarget();
         // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format -> Format anpassen
@@ -93,7 +120,7 @@ public class Main {
         String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
         String title = analyzePageTitle(targetId, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
-        // TODO: 12.01.2021 Weitere Analyze for keyword generation
+        KeywordHeaderParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
         clearAndRegisterKeywords(targetId, keywords);
         updateTargetNextVisit(targetId, title, description);
     }
@@ -191,12 +218,12 @@ public class Main {
     }
 
     public static boolean updateTargetNextVisit(int targetId, String title, String description) {
-//        if (description.length()>164) {
-//            description = description.substring(0, 155);
-//        }
-//        if (title.length()>124) {
-//            title = title.substring(0, 124);
-//        }
+        if (description.length()>164) {
+            description = description.substring(0, 155);
+        }
+        if (title.length()>124) {
+            title = title.substring(0, 124);
+        }
 
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
@@ -223,6 +250,25 @@ public class Main {
         } */
     }
 
+    public static void printMemory(){
+        Runtime runtime = Runtime.getRuntime();
+
+
+        NumberFormat format = NumberFormat.getInstance();
+
+        StringBuilder sb = new StringBuilder();
+        long maxMemory = runtime.maxMemory();
+        long allocatedMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+
+        long mb = 1024*1024;
+        sb.append("Used memory: "+((runtime.totalMemory() - runtime.freeMemory())/(float)mb)+" Megabyte");
+//        sb.append("free memory: " + format.format(freeMemory / 1024) + "\n");
+//        sb.append("allocated memory: " + format.format(allocatedMemory / 1024) + "\n");i
+//        sb.append("max memory: " + format.format(maxMemory / 1024) + "\n");
+//        sb.append("total free memory: " + format.format((freeMemory + (maxMemory - allocatedMemory)) / 1024) + "\n");
+        System.out.println(sb);
+    }
 
     public static void clearAndRegisterKeywords(int targetId, HashMap<String, Integer> keywords) {
         DataBaseFunction.clearKeywords(targetId);
@@ -235,7 +281,8 @@ public class Main {
 
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
         List<String> disabledKeywords = java.util.Arrays.asList(
-                new String[]{"er", "sie", "es", "and", "und", "dass", "with"});
+                new String[]{"er", "sie", "es", "and", "und", "dass", "with", "der", "auf", "nach","zum", "dem", "back", "bei", "mit",
+              "diese", "die", "den", "des", "its"  });
 
         //alles was kein Schriftzeichen ist entfernen, ö.ä,ü bleiben bestehen
         textForKeywords = textForKeywords.replaceAll("[\\p{Punct}]+", " ")
@@ -244,7 +291,7 @@ public class Main {
                 .replaceAll("[ ]+", " ");
         String[] newKeywords = textForKeywords.split(" ");
         for (String word : newKeywords) {
-            word = word.toLowerCase();
+            word = word.toLowerCase().trim();
             if ((word.length() > 2) && (!disabledKeywords.contains(word))) {
                 if ((!keywords.containsKey(word)) || (relevanz > keywords.get(word))) {
                     System.out.println("registerKeywords(" + word + ", " + relevanz + ")");

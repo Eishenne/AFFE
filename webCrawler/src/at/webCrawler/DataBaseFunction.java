@@ -1,10 +1,7 @@
 package at.webCrawler;
 
 import java.sql.*;
-
-
 public class DataBaseFunction {
-
     /**
      * establishes and closes a connection to the DB
      * write a row into DB webcrawler.target

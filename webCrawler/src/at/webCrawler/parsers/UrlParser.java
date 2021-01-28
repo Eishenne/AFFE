@@ -19,7 +19,7 @@ public class UrlParser {
                     try {
                         String URLtext = currentURL.toURI().resolve(n.getNodeValue()).toString();
                         int hashmarkPos = URLtext.indexOf("#");
-                        if (hashmarkPos > 0){
+                        if (hashmarkPos > 0) {
                             URLtext = URLtext.substring(0, hashmarkPos);
                         }
                         String regex = "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
