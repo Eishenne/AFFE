@@ -1,13 +1,13 @@
 package at.webCrawler;
 
 import java.sql.*;
+
 public class DataBaseFunction {
     /**
      * establishes and closes a connection to the DB
      * write a row into DB webcrawler.target
      *
      * @return true if successfull
-     * Todo: doesnt close the connection
      */
     public static boolean writeTargetToTargetlist(String baseUrl) {
         int nextvisit = 1440;
@@ -83,6 +83,7 @@ public class DataBaseFunction {
 
     /**
      * returns one complete row from DB.target
+     *
      * @param baseUrl from DB.target
      * @return Target t
      */
@@ -116,6 +117,7 @@ public class DataBaseFunction {
 
     /**
      * returns the ID row from DB.target
+     *
      * @param baseUrl from DB.target via method
      * @return int
      */
@@ -152,7 +154,7 @@ public class DataBaseFunction {
         } catch (SQLException exc) {
             exc.printStackTrace();
             return false;
-        }  finally {
+        } finally {
             DataBaseMaster.getInstance().closeDatabase();
         }
     }
@@ -228,7 +230,7 @@ public class DataBaseFunction {
         } finally {
             DataBaseMaster.getInstance().closeDatabase();
         }
-        if (nextTarget.length()<6) {
+        if (nextTarget.length() < 6) {
             System.out.println("nextvisit wird noch nicht berücksichtigt.");
             // TODO: nextTarget aus lastupdate + nextvisit(Minuten)
         }
@@ -251,7 +253,7 @@ public class DataBaseFunction {
     }
 
 
-    public static void writeKeyword(String keyword, int relevanz, int targetId){
+    public static void writeKeyword(String keyword, int relevanz, int targetId) {
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
             String statement = "INSERT INTO webcrawler.searchresult (keyword, relevanz, FK_targetId) " +
@@ -268,7 +270,7 @@ public class DataBaseFunction {
         }
     }
 
-    public static void writeDB_Nextvisit(int targetId,String title,String description,int nextvisit){
+    public static void writeDB_Nextvisit(int targetId, String title, String description, int nextvisit) {
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
             String statement = "UPDATE webcrawler.target SET (lastupdate, nextvisit, title, description) VALUES (?, ?, ?, ?) WHERE id = ?;";
@@ -302,10 +304,39 @@ public class DataBaseFunction {
             ps.setInt(6, target.targetId);
             int rows = ps.executeUpdate();
 
-            //close connection when row is written ????
-            // or
-            //each time we read/write                                                  ???????????????????????????
-            //DataBaseMaster.closeDatabase();
+            return true;
+        } catch (SQLException exc) {
+            exc.printStackTrace();
+            return false;
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
+    }
+
+
+    public static boolean updateTargetNextVisit(int targetId, String title, String description) {
+        if (description.length() > 164) {
+            description = description.substring(0, 155);
+        }
+        if (title.length() > 124) {
+            title = title.substring(0, 124);
+        }
+
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+            String statement =
+                    "UPDATE target " +
+                            "SET title= ?, nextvisit= ?, description = ?, lastupdate = ?" +
+                            "WHERE id= ?;";
+
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+
+            ps.setString(1, title);
+            ps.setInt(2, 1440);
+            ps.setString(3, description);
+            ps.setTimestamp(4, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setInt(5, targetId);
+            int rows = ps.executeUpdate();
             return true;
         } catch (SQLException exc) {
             exc.printStackTrace();

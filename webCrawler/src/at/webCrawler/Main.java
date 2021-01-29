@@ -19,6 +19,10 @@ import java.util.HashMap;
 import java.util.List;
 
 public class Main {
+    //TODO: java.sql.* anpassen auf benötigte SQL imports und diese einzeln importieren
+    //TODO: import der ProgrammKlassen oder qualifiziert aufrufen. Aktuell wird beides gemacht. Warum?
+    // Was ist besser?
+    // TODO: import Node oder DomNode. Alternative siehe KeywordHeaderParser
     public static void main(String[] args) throws IOException {
         WebClient webClient = new WebClient();
         int countReadPages = 0;
@@ -26,7 +30,7 @@ public class Main {
         while (!stop) {
             System.gc();
             printMemory();
-            String nextURL = readDB_nextTarget(stop);
+            String nextURL = readDB_nextTarget();
             int targetId = getTargetId(nextURL);
 
             //browser erzeugen
@@ -35,14 +39,13 @@ public class Main {
             try {
                 System.out.println("Load URL: " + nextURL);
                 HtmlPage page = webClient.getPage(nextURL);
-                analyzePage(nextURL, page);
-
+                analyzePage(nextURL, page, targetId);
             }catch (Exception e) {
                 System.out.println(e.getMessage());
-                updateTargetNextVisit(targetId, "Exception", "");
+                DataBaseFunction.updateTargetNextVisit(targetId, "Exception", "");
             } catch(Error err) {
                 err.printStackTrace();
-                updateTargetNextVisit(targetId, err.getClass().getSimpleName(), "");
+                DataBaseFunction.updateTargetNextVisit(targetId, err.getClass().getSimpleName(), "");
             } finally {
                 webClient.close();
                 webClient = new WebClient();
@@ -77,13 +80,14 @@ public class Main {
         }
     }
 
-    public static String readDB_nextTarget(boolean stop) {
-        //int controller = -1;  // index for entire DB up to date, <0 = not up to date, >ß = up to date
+
+    public static String readDB_nextTarget() {
         String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
         //String targetUrl = "https://www.laendlejob.at";
         //String targetUrl = "https://vol.at";
         //targetUrl = DataBaseFunction.readDbNextTarget();
-        // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format -> Format anpassen
+        // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format ->
+        //  Format anpassen oder writeUrl anpassen
 
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
@@ -92,20 +96,15 @@ public class Main {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 targetUrl = rs.getString(1);
-                //controller = 1;
             }
-            //controller for exit
-//            if (controller > 0) {
-//                stop = true;
-//            }
         } catch (SQLException sqle) {
             sqle.printStackTrace();
         } finally {
             DataBaseMaster.getInstance().closeDatabase();
         }
-
         return targetUrl;
     }
+
 
     public static int getTargetId(String currentURL) {
         int targetId = DataBaseFunction.readTargetId(currentURL);
@@ -113,38 +112,42 @@ public class Main {
     }
 
 
-    public static void analyzePage(String currentURL, HtmlPage page) {
+    public static void analyzePage(String currentURL, HtmlPage page, int targetId) {
         HashMap<String, Integer> keywords = new HashMap<>();
 
-        int targetId = getTargetId(currentURL);
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
         String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
         String title = analyzePageTitle(targetId, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
         // TODO: 12.01.2021 Weitere Analyze for keyword generation
         KeywordHeaderParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
-	clearAndRegisterKeywords(targetId, keywords);
-        updateTargetNextVisit(targetId, title, description);
+	    clearAndRegisterKeywords(targetId, keywords);
+        DataBaseFunction.updateTargetNextVisit(targetId, title, description);
     }
 
     /**
-     * erweitert keywords-Liste aus dem inhalt des title-tags. Es gibt 2 Formen des Title-Tags.
+     * Ermittelt title aus htmlElement und gibt diesen als String zurück.
+     * Erweitert keywords-Liste aus dem Inhalt der title-tags. Es gibt 2 Formen des Title-Tags.
      * Form 1: <title> content </title>
      * Form 2: <meta name"title" content=" content ">
-     *
-     * @param currentURL  URL
-     * @param htmlElement DomNode
-     * @param keywords    HashMap<String, Integer>
+     * @param targetId id der currentURL in DB_target
+     * @param currentURL URL der aktuellen Webseite
+     * @param htmlElement zu durchsuchende DomNode-Elemente
+     * @param keywords HashMap<String, Integer> Liste aller Keywords in currentURL
+     * @return title als String
      */
     public static String analyzePageTitle(int targetId, URL currentURL, DomNode htmlElement, HashMap<String, Integer> keywords) {
         String title = "";
-        //Form 1
+        String title1 = "";
+        String title2 = "";
+
         for (DomNode d : htmlElement.getChildren()) {
             if (d.getLocalName() != null) {
+                //Form 1
                 if (d.getLocalName().equals("title")) {
-                    //--schreibt den Inhalt des HtmlTag
-                    System.out.println("Title: " + d.getTextContent());
-                    title = d.getTextContent();
+                    //Konsolenausgabe: Inhalt des HtmlTag
+//                    System.out.println("Title: " + d.getTextContent());
+                    title1 = d.getTextContent();
                     //Titel in Keywörter aufteilen
                     registerKeywords(d.getTextContent(), 5, keywords);
                 }
@@ -158,9 +161,10 @@ public class Main {
                             for (int j = 0; j < d.getAttributes().getLength(); j++) {
                                 Node m = d.getAttributes().item(i++);
                                 if (m.getNodeName().equals("content")) {
+                                    //Konsolenausgabe: Inhalt des HtmlTag
 //                                    System.out.println("contentNode: " + m.getNodeName());
 //                                    System.out.println("wert: " + m.getNodeValue());
-                                    title = m.getNodeValue();
+                                    title2 = m.getNodeValue();
                                     registerKeywords(title, 5, keywords);
                                 }
                             }
@@ -168,19 +172,32 @@ public class Main {
                     }
                 }
             }
-//            if (title.equals("")) {
-//                title = "kein_Titel_gefunden";
-//            }
+        }
+        if (title1.length() > title2.length()) {
+            title = title1;
+        } else {
+            title = title2;
         }
         return title;
     }
 
 
+    /**
+     * Durchsucht DomNode-htmlElement nach description Form 1 und Form 2. Gibt die längste als String zurück.
+     * TODO: 12.01.2021 Generate description in case no description is defined on website
+     * @param currentURL currentURL der aktuellen Webseite
+     * @param htmlElement zu durchsuchende DomNode-Elemente
+     * @param targetId id der URL in DB_target
+     * @return description als String
+     */
     public static String analyzeDescription(URL currentURL, DomNode htmlElement, int targetId) {
         String descriptionText = "";
+        String description1 = "";
+        String description2 = "";
 
         for (DomNode d : htmlElement.getChildren()) {
             if (d.getLocalName() != null) {
+                //Form 1
                 //description aus <meta name="description" content="beschreibung der seite">
                 if (d.getLocalName().equals("meta")) {
                     //---für die Anzahl seiner Parameter/Attributes
@@ -190,87 +207,33 @@ public class Main {
                             for (int j = 0; j < d.getAttributes().getLength(); j++) {
                                 Node m = d.getAttributes().item(i++);
                                 if (m.getNodeName().equals("content")) {
+                                    //Konsolenausgabe: Inhalt des HtmlTag
 //                                    System.out.println("contentNode: " + m.getNodeName());
 //                                    System.out.println("wert: " + m.getNodeValue());
-                                    descriptionText = m.getNodeValue();
+                                    description1 = m.getNodeValue();
                                 }
                             }
                         }
                     }
                 }
+                //Form 2
+                //description aus <description="">
                 if (d.getLocalName().equals("description")) {
-                    //--schreibt den Inhalt des HtmlTag
+                    //Konsolenausgabe: Inhalt des HtmlTag
 //                    System.out.println("Beschreibung: " + d.getTextContent());
-                    descriptionText = d.getTextContent();
-                    //Titel in Keywörter aufteilen
-                    //registerKeywords(d.getTextContent(), 5, keywords);
-
+                    description2 = d.getTextContent();
                 }
-
-                //descriptionText an DB übertragen
-//                if (descriptionText.equals("")) {
-//                    descriptionText = "keine_Beschreibung_gefunden";
-//                }
             }
-
         }
-        //DataBaseFunction.writeDB_Description(descriptionText, targetId);
+        //Auswahl der längsten description zum ablegen in DB
+        if (description1.length() > description2.length()) {
+            descriptionText = description1;
+        } else {
+            descriptionText = description2;
+        }
         return descriptionText;
-        // TODO: 12.01.2021 Generate Description in case no description defined on site
     }
 
-    public static boolean updateTargetNextVisit(int targetId, String title, String description) {
-        if (description.length()>164) {
-            description = description.substring(0, 155);
-        }
-        if (title.length()>124) {
-            title = title.substring(0, 124);
-        }
-
-        try {
-            Connection con = DataBaseMaster.getInstance().getDbCon();
-            String statement =
-                    "UPDATE target " +
-                            "SET title= ?, nextvisit= ?, description = ?, lastupdate = ?" +
-                            "WHERE id= ?;";
-
-            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
-
-            ps.setString(1, title);
-            ps.setInt(2, 1440);
-            ps.setString(3, description);
-            ps.setTimestamp(4, new java.sql.Timestamp(System.currentTimeMillis()));
-            ps.setInt(5, targetId);
-            int rows = ps.executeUpdate();
-            return true;
-        } catch (SQLException exc) {
-            exc.printStackTrace();
-            return false;
-        } /* finally {                                                                  ??????????????????????????
-            con.closeDatabase();
-            con.close();
-        } */
-    }
-
-    public static void printMemory(){
-        Runtime runtime = Runtime.getRuntime();
-
-
-        NumberFormat format = NumberFormat.getInstance();
-
-        StringBuilder sb = new StringBuilder();
-        long maxMemory = runtime.maxMemory();
-        long allocatedMemory = runtime.totalMemory();
-        long freeMemory = runtime.freeMemory();
-
-        long mb = 1024*1024;
-        sb.append("Used memory: "+((runtime.totalMemory() - runtime.freeMemory())/(float)mb)+" Megabyte");
-//        sb.append("free memory: " + format.format(freeMemory / 1024) + "\n");
-//        sb.append("allocated memory: " + format.format(allocatedMemory / 1024) + "\n");i
-//        sb.append("max memory: " + format.format(maxMemory / 1024) + "\n");
-//        sb.append("total free memory: " + format.format((freeMemory + (maxMemory - allocatedMemory)) / 1024) + "\n");
-        System.out.println(sb);
-    }
 
     public static void clearAndRegisterKeywords(int targetId, HashMap<String, Integer> keywords) {
         DataBaseFunction.clearKeywords(targetId);
@@ -278,7 +241,6 @@ public class Main {
             //--keyword, relevanz, targetId an SQL übergeben
             DataBaseFunction.writeKeyword(k, keywords.get(k), targetId);
         }
-
     }
 
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
@@ -346,5 +308,28 @@ public class Main {
         for (DomNode d : htmlElement.getChildren()) {
             printResultHeader(d, baseUrl);
         }
+    }
+
+    /**
+     * listet Speicherinformationen der Java-VM in Konsole auf
+     */
+    public static void printMemory(){
+        Runtime runtime = Runtime.getRuntime();
+
+
+        NumberFormat format = NumberFormat.getInstance();
+
+        StringBuilder sb = new StringBuilder();
+        long maxMemory = runtime.maxMemory();
+        long allocatedMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+
+        long mb = 1024*1024;
+        sb.append("Used memory: "+((runtime.totalMemory() - runtime.freeMemory())/(float)mb)+" Megabyte");
+//        sb.append("free memory: " + format.format(freeMemory / 1024) + "\n");
+//        sb.append("allocated memory: " + format.format(allocatedMemory / 1024) + "\n");i
+//        sb.append("max memory: " + format.format(maxMemory / 1024) + "\n");
+//        sb.append("total free memory: " + format.format((freeMemory + (maxMemory - allocatedMemory)) / 1024) + "\n");
+        System.out.println(sb);
     }
 }

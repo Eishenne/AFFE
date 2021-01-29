@@ -9,7 +9,7 @@ import java.net.URL;
 
 public class UrlParser {
     public static void analyzeHyperlinks(URL currentURL, DomNode htmlElement) {
-        //Links auslesen
+        //Links auslesen und URL finden
         //-LinkTag finden
         if (htmlElement.getNodeName().equals("a")) {
             for (int i = 0; i < htmlElement.getAttributes().getLength(); i++) {
@@ -18,6 +18,8 @@ public class UrlParser {
                 if (n.getNodeName().equals("href")) {
                     try {
                         String URLtext = currentURL.toURI().resolve(n.getNodeValue()).toString();
+                        //Nummernzeichen am Ende der URL entfernen
+                        //TODO: Nummernzeichen/Raute innerhalb der URI verarbeiten
                         int hashmarkPos = URLtext.indexOf("#");
                         if (hashmarkPos > 0) {
                             URLtext = URLtext.substring(0, hashmarkPos);

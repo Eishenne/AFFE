@@ -3,7 +3,6 @@ package at.webCrawler.parsers;
 import at.webCrawler.Main;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import org.w3c.dom.Node;
 
 import java.util.HashMap;
 
