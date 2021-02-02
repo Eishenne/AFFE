@@ -7,6 +7,8 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import java.util.HashMap;
 
 public class KeywordHeaderParser {
+    //TODO: umbenennen in KeywordHeadlineParser
+    //TODO: Methodennamen anpassen
     public static void analyzeKeywordHeaderTag(String currentURL, HtmlPage page, HashMap<String, Integer> keywords) {
         System.out.println(currentURL + page.getUrl() + keywords);
         analyzeElementForHeadlineTag(page.getBody(), keywords);

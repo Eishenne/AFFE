@@ -4,10 +4,10 @@ import java.sql.*;
 
 public class DataBaseFunction {
     /**
-     * establishes and closes a connection to the DB
-     * write a row into DB webcrawler.target
+     * write a row into DB.target after getting all relevant information for all columns
      *
-     * @return true if successfull
+     * @param baseUrl currentURL as String
+     * @return true if write was successfull
      */
     public static boolean writeTargetToTargetlist(String baseUrl) {
         int nextvisit = 1440;
@@ -48,7 +48,7 @@ public class DataBaseFunction {
      * returns true if URL not found in DB
      *
      * @param baseUrl String with URL
-     * @return true if URL not found
+     * @return baseUrl is a new entry
      */
     public static boolean newTarget(String baseUrl) {
         ResultSet result = null;
@@ -61,10 +61,10 @@ public class DataBaseFunction {
             result = ps.executeQuery();
 
             if (result.next()) {
-                System.out.println(baseUrl + " exisitiert in db");
+//                System.out.println(baseUrl + " exisitiert in db");
                 return false;
             } else {
-                System.out.println(baseUrl + " exisitiert nicht in db");
+//                System.out.println(baseUrl + " exisitiert nicht in db");
                 return true;
             }
         } catch (SQLException exc) {
@@ -111,9 +111,9 @@ public class DataBaseFunction {
 
 
     /**
-     * returns the ID row from DB.target
+     * returns id of baseUrl from DB.target
      *
-     * @param baseUrl from DB.target via method
+     * @param baseUrl currentUrl as String
      * @return int
      */
     public static int readTargetId(String baseUrl) {
@@ -137,7 +137,21 @@ public class DataBaseFunction {
     }
 
 
+    /**
+     * writes baseUrl to DB.target(url)
+     *
+     * @param baseUrl currentUrl as String
+     * @return successful write
+     */
     public static boolean writeTargetUrl(String baseUrl) {
+        boolean success = false;
+        //Url prüfen, maximallänge überschritten
+        if (baseUrl.length() > 2048) {
+            baseUrl = baseUrl.substring(0, 2048);
+            System.out.println("baseUrl ist länger als 2048 Zeichen. Siehe XML-Sitemaps: max 2048.");
+            return false;
+        }
+
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
             String statement = "INSERT INTO webcrawler.target " +
@@ -145,16 +159,24 @@ public class DataBaseFunction {
             PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, baseUrl);
             int rows = ps.executeUpdate();
-            return true;
+            success = true;
         } catch (SQLException exc) {
             exc.printStackTrace();
-            return false;
+            success = false;
         } finally {
             DataBaseMaster.getInstance().closeDatabase();
         }
+        return success;
     }
 
 
+    /**
+     * updates title for DB.target at given id
+     *
+     * @param titel title of website
+     * @param targetId
+     * @return
+     */
     public static boolean writeDB_titel(String titel, int targetId) {
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();

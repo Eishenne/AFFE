@@ -159,6 +159,7 @@ public class Main {
     /**
      * Durchsucht DomNode-htmlElement nach description Form 1 und Form 2. Gibt die längste als String zurück.
      * TODO: 12.01.2021 Generate description in case no description is defined on website
+     *
      * @param currentURL currentURL der aktuellen Webseite
      * @param htmlElement zu durchsuchende DomNode-Elemente
      * @param targetId id der URL in DB_target
@@ -204,6 +205,11 @@ public class Main {
             descriptionText = description1;
         } else {
             descriptionText = description2;
+        }
+        //keine description auf Seite vorhanden
+        if (descriptionText.length() < 1) {
+            System.out.println("Keine Beschreibung gefunden auf " + currentURL + ".");
+            descriptionText = "Fehler: Seite prüfen.";
         }
         return descriptionText;
     }
