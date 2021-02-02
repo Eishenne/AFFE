@@ -24,11 +24,6 @@ public class DataBaseFunction {
             ps.setString(4, "Methode searchAndCreateTitel");
             ps.setString(5, "Methode searchAndCreateDescription");
             int rows = ps.executeUpdate();
-
-            //close connection when row is written ????
-            // or
-            //each time we read/write                                                  ???????????????????????????
-            //DataBaseMaster.closeDatabase();
             return true;
 
             //executeUpdate returns 1 if rows have been written
@@ -214,27 +209,28 @@ public class DataBaseFunction {
         }
     }
 
+    public static String readDB_nextTarget() {
+        String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
+        //String targetUrl = "https://www.laendlejob.at";
+        //String targetUrl = "https://vol.at";
+        //targetUrl = DataBaseFunction.readDbNextTarget();
+        // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format ->
+        //  Format anpassen oder writeUrl anpassen
 
-    public static String readDbNextTarget() {
-        String nextTarget = "";
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
-            String statement = "SELECT url FROM target WHERE lastupdate IS NULL";
+            String statement = "select url from target order by lastupdate IS NULL DESC, lastupdate  limit 1";
             PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                nextTarget = rs.getString(1);
+                targetUrl = rs.getString(1);
             }
         } catch (SQLException sqle) {
             sqle.printStackTrace();
         } finally {
             DataBaseMaster.getInstance().closeDatabase();
         }
-        if (nextTarget.length() < 6) {
-            System.out.println("nextvisit wird noch nicht berücksichtigt.");
-            // TODO: nextTarget aus lastupdate + nextvisit(Minuten)
-        }
-        return nextTarget;
+        return targetUrl;
     }
 
 
@@ -254,6 +250,10 @@ public class DataBaseFunction {
 
 
     public static void writeKeyword(String keyword, int relevanz, int targetId) {
+        if (keyword.length() > 165) {
+            keyword = keyword.substring(0, 165);
+        }
+
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
             String statement = "INSERT INTO webcrawler.searchresult (keyword, relevanz, FK_targetId) " +
@@ -271,6 +271,12 @@ public class DataBaseFunction {
     }
 
     public static void writeDB_Nextvisit(int targetId, String title, String description, int nextvisit) {
+        if (description.length() > 2048) {
+            description = description.substring(0, 2048);
+        }
+        if (title.length() > 512) {
+            title = title.substring(0, 512);
+        }
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
             String statement = "UPDATE webcrawler.target SET (lastupdate, nextvisit, title, description) VALUES (?, ?, ?, ?) WHERE id = ?;";
@@ -315,11 +321,12 @@ public class DataBaseFunction {
 
 
     public static boolean updateTargetNextVisit(int targetId, String title, String description) {
-        if (description.length() > 164) {
-            description = description.substring(0, 155);
+        int nextvisit = 1440;
+        if (description.length() > 2048) {
+            description = description.substring(0, 2048);
         }
-        if (title.length() > 124) {
-            title = title.substring(0, 124);
+        if (title.length() > 512) {
+            title = title.substring(0, 512);
         }
 
         try {
@@ -332,7 +339,7 @@ public class DataBaseFunction {
             PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
 
             ps.setString(1, title);
-            ps.setInt(2, 1440);
+            ps.setInt(2, nextvisit);
             ps.setString(3, description);
             ps.setTimestamp(4, new java.sql.Timestamp(System.currentTimeMillis()));
             ps.setInt(5, targetId);

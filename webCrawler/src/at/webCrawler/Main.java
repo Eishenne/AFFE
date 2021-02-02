@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.sql.*;
 import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.List;
@@ -30,11 +29,9 @@ public class Main {
         while (!stop) {
             System.gc();
             printMemory();
-            String nextURL = readDB_nextTarget();
+            String nextURL = DataBaseFunction.readDB_nextTarget();
             int targetId = getTargetId(nextURL);
-
-            //browser erzeugen
-            webClient.getCache().clear();
+            //TODO: robots.txt lesen und berücksichtigen
             webClient.getOptions().setThrowExceptionOnScriptError(false);
             try {
                 System.out.println("Load URL: " + nextURL);
@@ -47,6 +44,8 @@ public class Main {
                 err.printStackTrace();
                 DataBaseFunction.updateTargetNextVisit(targetId, err.getClass().getSimpleName(), "");
             } finally {
+                //objekte leeren und freimachen für GarbageCollector
+                webClient.getCache().clear();
                 webClient.close();
                 webClient = new WebClient();
             }
@@ -81,31 +80,6 @@ public class Main {
     }
 
 
-    public static String readDB_nextTarget() {
-        String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
-        //String targetUrl = "https://www.laendlejob.at";
-        //String targetUrl = "https://vol.at";
-        //targetUrl = DataBaseFunction.readDbNextTarget();
-        // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format ->
-        //  Format anpassen oder writeUrl anpassen
-
-        try {
-            Connection con = DataBaseMaster.getInstance().getDbCon();
-            String statement = "select url from target order by lastupdate IS NULL DESC, lastupdate  limit 1";
-            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                targetUrl = rs.getString(1);
-            }
-        } catch (SQLException sqle) {
-            sqle.printStackTrace();
-        } finally {
-            DataBaseMaster.getInstance().closeDatabase();
-        }
-        return targetUrl;
-    }
-
-
     public static int getTargetId(String currentURL) {
         int targetId = DataBaseFunction.readTargetId(currentURL);
         return targetId;
@@ -119,7 +93,7 @@ public class Main {
         String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
         String title = analyzePageTitle(targetId, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
-        // TODO: 12.01.2021 Weitere Analyze for keyword generation
+        // TODO: 12.01.2021 Weitere Analyzefunktionen zwecks Keyword-Erzeugung
         KeywordHeaderParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
 	    clearAndRegisterKeywords(targetId, keywords);
         DataBaseFunction.updateTargetNextVisit(targetId, title, description);
@@ -244,9 +218,50 @@ public class Main {
     }
 
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
+        //Blacklist Bindewörter
+        //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache
         List<String> disabledKeywords = java.util.Arrays.asList(
-                new String[]{"er", "sie", "es", "and", "und", "dass", "with", "der", "auf", "nach","zum", "dem", "back", "bei", "mit",
-              "diese", "die", "den", "des", "its"  });
+                new String[]{
+                        //deutsch
+                        //Pronomen
+                        "ich", "du", "er", "sie", "es", "wir", "ihr", "sie",
+                        "meiner", "deiner", "seiner", "ihrer", "unser", "euer",
+                        "mir", "dir", "ihm", "uns", "euch", "ihnen",
+                        "mich", "dich", "ihn",
+                        //Artikel
+                        "der", "die", "das", "den", "des", "dem",
+                        //Fragewörter
+                        "wer", "wie", "was", "wieso", "weshalb", "warum", "wo", "wann", "wessen", "wem", "wohin",
+                        "woran", "woher", "wieviele", "wieviel",
+                        "ist", "sein", "und", "oder", "auf", "nach", "oben", "hinten", "links", "rechts", "rechte",
+                        "oft", "zum", "zur", "bei", "kommt", "mit", "alle", "dass", "dein", "deine",
+                        "meine", "seine", "diese", "dieser", "klein", "kleine", "kleiner", "kleinen", "große", "als",
+                        "von", "vom", "voll", "mal", "ersten", "oder", "ihre", "ihrer", "über", "uns", "also",
+                        "grenznah", "frau", "stunde", "inner", "schnell", "bereich", "werden", "sind", "durch",
+                        "können", "jetzt", "aus", "unser", "unsere", "unserer", "less", "such", "finden", "bis",
+                        "nicht", "beim", "auch", "sich", "ein", "eine", "eins", "einen", "einer", "einem", "kein",
+                        "keines", "keiner", "mehr", "noch", "doch", "", "%---%",
+                        //english
+                        //Pronomen
+                        //Artikel
+                        //Fragewörter
+                        "i", "you", "he", "she", "it", "we", "them", "they", "why", "when", "how", "where", "what",
+                        "which", "was", "for", "other", "there", "these", "those", "their", "they", "them", "are",
+                        "who", "is", "the", "this", "that", "he", "she", "his", "her", "have", "minute", "hours",
+                        "and", "with", "back", "eye", "reveal", "us", "our", "said", "–relaunch", "make", "long", "or",
+                        "sold", "told", "big", "medium", "small", "its", "seeing", "rocket", "cancel", "here",
+                        "backed", "your", "you", "all", "children", "use", "on", "off", "replay", "share", "pizza",
+                        "best", "forever", "left", "right", "rights", "out", "top", "from", "more", "get", "first",
+                        "second", "third", "can", "may", "form", "know", "now", "no", "time", "will", "into", "free",
+                        "across", "corss", "one", "like", "keep", "most", "need", "changing", "next", "through",
+                        "real", "better", "similar", "wir", "see", "any", "life", "show", "usage", "find", "outside",
+                        "overview", "stay", "footer", "improve", "change", "here", "home", "exercise", "shield",
+                        "open", "whom", "want", "full", "only", "listen", "east", "over", "useful", "quick", "easy",
+                        "middle", "please", "some", "trust", "thank", "thanks", "than", "payment", "end", "made",
+                        "white", "way", "increase", "decrease", "reach", "reaching", "between", "should", "house",
+                        "hard", "but", "smart", "decision", "become", "becomes", "self", "behalf", "high", "family",
+                        "love", "good", "grow", "buy", "button", "did", "take", "fraud", "own", "thing", "things",
+                        "think", "thinks", "down", "up", "side", "%'s", "%´s", "%`s", "'ve", "´ve", "%`ve"});
 
         //alles was kein Schriftzeichen ist entfernen, ö.ä,ü bleiben bestehen
         textForKeywords = textForKeywords.replaceAll("[\\p{Punct}]+", " ")
@@ -312,13 +327,11 @@ public class Main {
 
     /**
      * listet Speicherinformationen der Java-VM in Konsole auf
+     * TODO: prüfen ob es mit Bytes oder KBytes arbeitet -> mb = 1024 * 1024 * 1024
      */
     public static void printMemory(){
         Runtime runtime = Runtime.getRuntime();
-
-
         NumberFormat format = NumberFormat.getInstance();
-
         StringBuilder sb = new StringBuilder();
         long maxMemory = runtime.maxMemory();
         long allocatedMemory = runtime.totalMemory();
