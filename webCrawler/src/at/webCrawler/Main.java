@@ -212,6 +212,7 @@ public class Main {
         if (descriptionText.length() < 1) {
             System.out.println("Keine Beschreibung gefunden auf " + currentURL + ".");
             descriptionText = "Fehler: Seite prüfen.";
+            //TODO: generate description in case none is found
         }
         return descriptionText;
     }
