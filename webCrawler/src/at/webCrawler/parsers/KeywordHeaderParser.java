@@ -10,22 +10,22 @@ public class KeywordHeaderParser {
     //TODO: umbenennen in KeywordHeadlineParser
     //TODO: Methodennamen anpassen
     public static void analyzeKeywordHeaderTag(String currentURL, HtmlPage page, HashMap<String, Integer> keywords) {
-        System.out.println(currentURL + page.getUrl() + keywords);
+//        System.out.println(currentURL + page.getUrl() + keywords);
         analyzeElementForHeadlineTag(page.getBody(), keywords);
     }
 
     private static void analyzeElementForHeadlineTag(DomNode htmlElement, HashMap<String, Integer> keywords){
         String nodeName = htmlElement.getNodeName();
         if (nodeName.equals("h1")){
-            System.out.println("analyzeElementForHeadlineTag " + nodeName + " \"" + htmlElement.getTextContent() + "\"");
+//            System.out.println("analyzeElementForHeadlineTag " + nodeName + " \"" + htmlElement.getTextContent() + "\"");
             Main.registerKeywords(htmlElement.getTextContent(), 3, keywords);
         }
         if (nodeName.equals("h2")){
-            System.out.println("analyzeElementForHeadlineTag " + nodeName + " \"" + htmlElement.getTextContent() + "\"");
+//            System.out.println("analyzeElementForHeadlineTag " + nodeName + " \"" + htmlElement.getTextContent() + "\"");
             Main.registerKeywords(htmlElement.getTextContent(), 2, keywords);
         }
         if (nodeName.equals("h3")){
-            System.out.println("analyzeElementForHeadlineTag " + nodeName + " \"" + htmlElement.getTextContent() + "\"");
+//            System.out.println("analyzeElementForHeadlineTag " + nodeName + " \"" + htmlElement.getTextContent() + "\"");
             Main.registerKeywords(htmlElement.getTextContent(), 1, keywords);
         }
 

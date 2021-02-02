@@ -33,14 +33,17 @@ public class Main {
             int targetId = getTargetId(nextURL);
             //TODO: robots.txt lesen und berücksichtigen
             webClient.getOptions().setThrowExceptionOnScriptError(false);
+            webClient.getOptions().setJavaScriptEnabled(false);
+            webClient.getOptions().setCssEnabled(false);
             try {
                 System.out.println("Load URL: " + nextURL);
+                System.out.println("Hello " + nextURL + "\nWelcome to AFFE!");
                 HtmlPage page = webClient.getPage(nextURL);
                 analyzePage(nextURL, page, targetId);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println(e.getMessage());
                 DataBaseFunction.updateTargetNextVisit(targetId, "Exception", "");
-            } catch(Error err) {
+            } catch (Error err) {
                 err.printStackTrace();
                 DataBaseFunction.updateTargetNextVisit(targetId, err.getClass().getSimpleName(), "");
             } finally {
@@ -93,21 +96,20 @@ public class Main {
         String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
         String title = analyzePageTitle(targetId, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
-        // TODO: 12.01.2021 Weitere Analyzefunktionen zwecks Keyword-Erzeugung
         KeywordHeaderParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
-	    clearAndRegisterKeywords(targetId, keywords);
+        clearAndRegisterKeywords(targetId, keywords);
         DataBaseFunction.updateTargetNextVisit(targetId, title, description);
     }
 
     /**
-     * Ermittelt title aus htmlElement und gibt diesen als String zurück.
-     * Erweitert keywords-Liste aus dem Inhalt der title-tags. Es gibt 2 Formen des Title-Tags.
+     * reads title of a website, extends keywordlist and returns the longest title found on website.
      * Form 1: <title> content </title>
      * Form 2: <meta name"title" content=" content ">
-     * @param targetId id der currentURL in DB_target
-     * @param currentURL URL der aktuellen Webseite
+     *
+     * @param targetId    id der currentURL in DB_target
+     * @param currentURL  URL der aktuellen Webseite
      * @param htmlElement zu durchsuchende DomNode-Elemente
-     * @param keywords HashMap<String, Integer> Liste aller Keywords in currentURL
+     * @param keywords    HashMap<String, Integer> Liste aller Keywords in currentURL
      * @return title als String
      */
     public static String analyzePageTitle(int targetId, URL currentURL, DomNode htmlElement, HashMap<String, Integer> keywords) {
@@ -157,13 +159,13 @@ public class Main {
 
 
     /**
-     * Durchsucht DomNode-htmlElement nach description Form 1 und Form 2. Gibt die längste als String zurück.
+     * searches htmlElement for a description and returns the longest description found.
      * TODO: 12.01.2021 Generate description in case no description is defined on website
      *
-     * @param currentURL currentURL der aktuellen Webseite
-     * @param htmlElement zu durchsuchende DomNode-Elemente
-     * @param targetId id der URL in DB_target
-     * @return description als String
+     * @param currentURL  URL of currently scanned website
+     * @param htmlElement DomNode which gets scanned for description
+     * @param targetId    id of URL in DB_target
+     * @return description as String
      */
     public static String analyzeDescription(URL currentURL, DomNode htmlElement, int targetId) {
         String descriptionText = "";
@@ -215,6 +217,13 @@ public class Main {
     }
 
 
+    /**
+     * clears old keywords of targetId = FK_targetId at DB-searchresult and writes all keywords from keywordlist into
+     * DB.searchresult
+     *
+     * @param targetId id of URL in DB.target
+     * @param keywords list of keywords found on currently analyzed website
+     */
     public static void clearAndRegisterKeywords(int targetId, HashMap<String, Integer> keywords) {
         DataBaseFunction.clearKeywords(targetId);
         for (String k : keywords.keySet()) {
@@ -223,9 +232,16 @@ public class Main {
         }
     }
 
+    /**
+     * formats and checks whether a word is to be registered as a keyword. Duplicate entrys are filtered out.
+     *
+     * @param textForKeywords String to be checked
+     * @param relevanz        given importance of the keyword-source
+     * @param keywords        list of keywords found for that website
+     */
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
         //Blacklist Bindewörter
-        //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache
+        //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache / meta charset?
         List<String> disabledKeywords = java.util.Arrays.asList(
                 new String[]{
                         //deutsch
@@ -294,7 +310,7 @@ public class Main {
     }
 
     /**
-     * a href und h2 aus der Seite auslesen (REKURSIV)
+     * lookup a href and h2 in htmlElement, prints them into console if found (rekursiv)
      *
      * @param htmlElement contains all Elements from a specific part of a html website
      * @param baseUrl     is the URL where the htmlElements are from
@@ -332,10 +348,10 @@ public class Main {
     }
 
     /**
-     * listet Speicherinformationen der Java-VM in Konsole auf
+     * lists information about memory of JAVA-VirtualMachine
      * TODO: prüfen ob es mit Bytes oder KBytes arbeitet -> mb = 1024 * 1024 * 1024
      */
-    public static void printMemory(){
+    public static void printMemory() {
         Runtime runtime = Runtime.getRuntime();
         NumberFormat format = NumberFormat.getInstance();
         StringBuilder sb = new StringBuilder();
@@ -343,8 +359,8 @@ public class Main {
         long allocatedMemory = runtime.totalMemory();
         long freeMemory = runtime.freeMemory();
 
-        long mb = 1024*1024;
-        sb.append("Used memory: "+((runtime.totalMemory() - runtime.freeMemory())/(float)mb)+" Megabyte");
+        long mb = 1024 * 1024;
+        sb.append("Used memory: " + ((runtime.totalMemory() - runtime.freeMemory()) / (float) mb) + " Megabyte");
 //        sb.append("free memory: " + format.format(freeMemory / 1024) + "\n");
 //        sb.append("allocated memory: " + format.format(allocatedMemory / 1024) + "\n");i
 //        sb.append("max memory: " + format.format(maxMemory / 1024) + "\n");
