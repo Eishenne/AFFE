@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class KeywordMetaParser {
     public static void analyzeKeywordMetaTag(String currentURL, HtmlPage page, HashMap<String, Integer> keywords) {
-        System.out.println(currentURL + page.getUrl() + keywords);
+//        System.out.println(currentURL + page.getUrl() + keywords);
 
         for (DomNode d : page.getHead().getChildren()) {
             if (d.getNodeName().equals("meta")) {
@@ -27,7 +27,7 @@ public class KeywordMetaParser {
                     }
                 }
                 if (keywordsFound) {
-                    System.out.println("Keywords: " + contentOfSite);
+//                    System.out.println("Keywords: " + contentOfSite);
                     Main.registerKeywords(contentOfSite, 4, keywords);
                 }
             }

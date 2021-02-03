@@ -296,7 +296,7 @@ public class Main {
             word = word.toLowerCase().trim();
             if ((word.length() > 2) && (!disabledKeywords.contains(word))) {
                 if ((!keywords.containsKey(word)) || (relevanz > keywords.get(word))) {
-                    System.out.println("registerKeywords(" + word + ", " + relevanz + ")");
+//                    System.out.println("registerKeywords(" + word + ", " + relevanz + ")");
                     keywords.put(word, relevanz);
                 }
             }

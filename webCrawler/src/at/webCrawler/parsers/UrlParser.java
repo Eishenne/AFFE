@@ -26,7 +26,7 @@ public class UrlParser {
                         }
                         String regex = "^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
                         if (URLtext.startsWith("http") && URLtext.matches(regex)) {
-                            System.out.println("a: " + URLtext);
+//                            System.out.println("a: " + URLtext);
                             //DB auf vorhandene URL prüfen
                             int targetID = DataBaseFunction.readTargetId(URLtext);
                             if (targetID < 0) {
