@@ -1,4 +1,5 @@
-# firstwebcrawler
+# AFFE
+Automatic File Find Entity
 Webcrawlerservice to search and archive websites on the internet.<br>
 Website to view the searchresults via keyword.<br>
 Changelog:<br>
