@@ -8,47 +8,50 @@ import java.util.List;
 import java.util.Scanner;
 
 public class FileReader {
-    public static List<String> blackListKeyword() {
+    public static String readTextFile(String dateipfad) {
         //File Inhalt lesen
         FileInputStream fis = null;
-        ArrayList<String> wordList = new ArrayList<>();
+        String currentLine = "";
+        String text = null;
 
         try {
-            fis = new FileInputStream("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
+            fis = new FileInputStream(dateipfad);
         } catch (
                 FileNotFoundException fnfe) {
             fnfe.printStackTrace();
         }
         if (fis != null) {          //wenn File nicht existiert, soll Code nicht weiter ausgeführt werden
             Scanner sc = new Scanner(fis);
-
             while (sc.hasNext()) {
-                String currentLine = sc.nextLine();
+                currentLine = sc.nextLine();
                 if (currentLine.startsWith("//")) {
                     continue;
                 }
                 if (currentLine.isEmpty()) {
                     continue;
                 }
-                String[] wordArray = currentLine.split(","); //woher woran wie wann warum weshalb weswegen
-
-                for (int i = 0; i < wordArray.length; i++) {
-                    String word = wordArray[i];
-                    word = word.trim();
-                    wordList.add(word);
-                    System.out.println(word);
+                text += currentLine;
+                try {
+                    fis.close();
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
                 }
-
-            }
-            try {
-                fis.close();
-
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
             }
         }
-        return wordList;
+        return text;
+    }
+
+    public static List<String> readBlacklistKeyword(String dateipfad) {
+        ArrayList<String> wordlist = new ArrayList<>();
+        String text = readTextFile(dateipfad);
+
+        String[] wordArray = text.split(","); //woher woran wie wann warum weshalb weswegen
+        for (int i = 0; i < wordArray.length; i++) {
+            String word = wordArray[i];
+            word = word.trim();
+            wordlist.add(word);
+            System.out.println(word);
+        }
+        return wordlist;
     }
 }
-
-

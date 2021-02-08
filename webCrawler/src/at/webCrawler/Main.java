@@ -277,9 +277,15 @@ public class Main {
      */
     public static void registerKeywords(String textForKeywords, int relevanz, HashMap<String, Integer> keywords) {
         //Blacklist Bindewörter
+        //TODO: Seitensprache ermitteln und entsprechende Blacklist wählen
+        /*englisch = C:\Users\DCV\Desktop\webcrawlerEnglisch.txt
+                duetsch = C:\Users\DCV\Desktop\webcrawlerDeutsch.txt
+                polnisch = C:\Users\DCV\Desktop\webcrawlerPolnisch.txt
+         String seitensprache  */
         //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache / meta charset?
-        List<String> disabledKeywords = FileReader.blackListKeyword();
-//        String[] disabledKeywords = blackListKeyword();
+        //TODO: verschiedenen Blacklist-Pfade als Konstante hinterlegen für jede Sprache
+        List<String> disabledKeywords = FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
+
         //alles was kein Schriftzeichen ist entfernen, ö.ä,ü bleiben bestehen
         textForKeywords = textForKeywords.replaceAll("[\\p{Punct}]+", " ")
                 .replaceAll("[\\p{Digit}]+", " ") //alle Zahlen ...
