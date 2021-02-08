@@ -10,14 +10,10 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import org.apache.http.HttpStatus;
 import org.w3c.dom.Node;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Scanner;
 import java.net.*;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
