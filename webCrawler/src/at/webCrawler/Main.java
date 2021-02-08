@@ -7,14 +7,23 @@ import at.webCrawler.tool.FileReader;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import org.apache.http.HttpStatus;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
+
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.net.*;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.text.NumberFormat;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
+import java.net.http.HttpClient;
 
 public class Main {
     //TODO: java.sql.* anpassen auf benötigte SQL imports und diese einzeln importieren
@@ -23,14 +32,39 @@ public class Main {
     // TODO: import Node oder DomNode. Alternative siehe KeywordHeaderParser
     public static void main(String[] args) throws IOException {
         WebClient webClient = new WebClient();
+
+        HttpClient client = HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
+                .connectTimeout(Duration.ofSeconds(20))
+                .build();
+
         int countReadPages = 0;
         boolean stop = false;
         while (!stop) {
             System.gc();
             printMemory();
-            String nextURL = DataBaseFunction.readDB_nextTarget();
+//            String nextURL = DataBaseFunction.readDB_nextTarget();
+            String nextURL = "https://www.wetator.org/";
             int targetId = getTargetId(nextURL);
             //TODO: robots.txt lesen und berücksichtigen
+
+            URI destination = URI.create(nextURL + "robots.txt");
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(destination)
+                    .timeout(Duration.ofMinutes(2))
+                    .build();
+            try {
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                if(response.statusCode() == HttpStatus.SC_OK) {
+                    System.out.println("Ziel :" + destination);
+                    System.out.println(response.body());
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+
+
             webClient.getOptions().setThrowExceptionOnScriptError(false);
             webClient.getOptions().setJavaScriptEnabled(false);
             webClient.getOptions().setCssEnabled(false);
@@ -38,7 +72,10 @@ public class Main {
                 System.out.println("Load URL: " + nextURL);
                 System.out.println("Hello " + nextURL + "\nWelcome to AFFE!");
                 HtmlPage page = webClient.getPage(nextURL);
-                analyzePage(nextURL, page, targetId);
+
+                System.out.println("Hier ist jetzt das erste p :" + createDescription(page.getBaseURL(), page.getBody(), targetId));
+
+                //analyzePage(nextURL, page, targetId);
             } catch (Exception e) {
                 System.out.println(e.getMessage());
                 DataBaseFunction.updateTargetNextVisit(targetId, "Exception", "");
@@ -72,7 +109,8 @@ public class Main {
 
             stop = false;
 
-            if (countReadPages >= 5) {
+
+            if (countReadPages >= 1) {
                 stop = true;
             } else {
                 ++countReadPages;
@@ -260,7 +298,7 @@ public class Main {
             word = word.toLowerCase().trim();
             if ((word.length() > 2) && (!disabledKeywords.contains(word))) {
                 if ((!keywords.containsKey(word)) || (relevanz > keywords.get(word))) {
-                    System.out.println("registerKeywords(" + word + ", " + relevanz + ")");
+//                    System.out.println("registerKeywords(" + word + ", " + relevanz + ")");
                     keywords.put(word, relevanz);
                 }
             }
@@ -281,12 +319,12 @@ public class Main {
      * @param baseUrl     is the URL where the htmlElements are from
      */
     public static void printResultHeader(DomNode htmlElement, URL baseUrl) {
-        //überschriften auslesen
+        //alle h2 überschriften auslesen
         if (htmlElement.getNodeName().equals("h2")) {
             System.out.println("h2:" + htmlElement.getTextContent());
         }
 
-        //Links auslesen
+        //alle Links auslesen
         //-LinkTag finden
         if (htmlElement.getNodeName().equals("a")) {
             for (int i = 0; i < htmlElement.getAttributes().getLength(); i++) {
@@ -332,5 +370,33 @@ public class Main {
 //        sb.append("total free memory: " + format.format((freeMemory + (maxMemory - allocatedMemory)) / 1024) + "\n");
         System.out.println(sb);
     }
+    /**
+     * looks up content of the first <p></p> Element and returns it
+     *
+     * @param currentURL  website to be searched
+     * @param htmlElement page from the current URL
+     * @param targetId    DB.target id of current URL
+     * @return alternativ description
+     */
+    public static String createDescription(URL currentURL, DomNode htmlElement, int targetId) {
 
+        for (DomNode d : htmlElement.getChildren()) {
+            if (d.getLocalName() != null) {
+                //Element welches wir suchen
+                if (d.getLocalName().equals("p")) {
+                    return d.getTextContent();
+                }
+            }
+            String description = createDescription(currentURL, d, targetId);
+            if (description != null) {
+                return description;
+            }
+        }
+        return null;
+    }
+
+
+    public static String analyzeRobotsTxt(URL currentURL, DomNode htmlElement, int targetId) {
+        return "hallo";
+    }
 }
