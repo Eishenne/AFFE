@@ -5,8 +5,10 @@ import at.webCrawler.parsers.KeywordMetaParser;
 import at.webCrawler.parsers.UrlParser;
 import at.webCrawler.tool.FileReader;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.WebClientOptions;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.util.WebClientUtils;
 import org.apache.http.HttpStatus;
 import org.w3c.dom.Node;
 
@@ -14,7 +16,7 @@ import java.io.IOException;
 
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.*;
+import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.text.NumberFormat;
@@ -23,38 +25,109 @@ import java.util.HashMap;
 import java.util.List;
 import java.net.http.HttpClient;
 
+/**
+ * A F F E  -  Automatic File Find Entity
+ * Ersteller:
+ * Belal (Programmierung Java, Tester) (2 Monate Programmiererfahrung);
+ * Henning Rüter (Projektleitung, Programmierung Java, Tester) (2 Jahre Programmiererfahrung);
+ * Sedat Körpe (Leiter Website Design - Front und Backend) (2 Monate Programmiererfahrung);
+ * Erstellt: Nov.2020 - Feb.2021;
+ * Mitwirkende: Gjula Horvath, Lukas Aichbauer;
+ * Unter Verwendung von: JAVA, MySQL, HTMLUnit, HTML;
+ * Dank an: Digital Campus Vorarlberg, Stiftung, Arbeitsmarktservice, Oracle, Microsoft, nginx, HTMLUnit, GitHub,
+ * Discord, Zoom, Kinder-Beschäftigungsmittelhersteller;
+ * Besonderer Dank geht an die Familien und Unterstützer der Beteiligten und sämtliche Ungenannten die
+ * an der Erstellung dieses Programms indirekt oder direkt Anteil hatten; Ausdrücklich auch jeder der schonmal auf
+ * einen Coding-Frage-Thread im Internet geantwortet hat;
+ */
 public class Main {
-    //TODO: java.sql.* anpassen auf benötigte SQL imports und diese einzeln importieren
+    //*************************************************************************************************
+    //
+    //                          A F F E  -  Automatic File Find Entity
+    //
+    //*************************************************************************************************
+    // Ersteller:
+    // Belal
+    // Henning Rüter
+    // Sedat Körpe
+    //
+    // Erstellt:
+    // Nov.2020 - Feb.2021
+    //
+    // Mitwirkende:
+    // Digital Campus Vorarlberg, Gjula Horvath, Lukas Aichbauer
+    //
+    // Unter Verwendung von / Dank geht an:
+    // JAVA Oracle, IntelliJ, w3c, Codecademy, Microsoft (MySQL), nginx, HTMLUnit, PHP, Discord, Zoom,
+    // Mama - Papa - Familie der Teilnehmenden
+    // sämtliche Kinder-Beschäftigungsmittelhersteller
+    //*************************************************************************************************
+
     //TODO: import der ProgrammKlassen oder qualifiziert aufrufen. Aktuell wird beides gemacht. Warum?
     // Was ist besser?
-    // TODO: import Node oder DomNode. Alternative siehe KeywordHeaderParser
+    //TODO: import Node oder DomNode. Alternative siehe KeywordHeaderParser
     public static void main(String[] args) throws IOException {
+        //Vorbereitung
+        //-Client für Webseiten
         WebClient webClient = new WebClient();
-
+        //-Client für Webdateien
         HttpClient client = HttpClient.newBuilder()
                 .version(java.net.http.HttpClient.Version.HTTP_1_1)
                 .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(20))
                 .build();
-
+        //-Zähler für Anzahl Programmdurchläufe
         int countReadPages = 0;
         boolean stop = false;
+        //-URL Sachen die ich brauche
+        //--URL aus String erzeugen
+        URL url = new URL("http://www.initialvalue.com");
+        //--baseURL
+        String base = "";
+        //--baseURL erzeugen manuelle funktion
+        int baseUrlEndIndex = -1;
+        String newBaseUrl = null;
+
+
+        //Programmstart
         while (!stop) {
             System.gc();
             printMemory();
 //            String nextURL = DataBaseFunction.readDB_nextTarget();
-            String nextURL = "https://www.wetator.org/";
+//            String nextURL = "https://www.wetator.org/";
+            String nextURL = "https://www.github.com";
             int targetId = getTargetId(nextURL);
-            //TODO: robots.txt lesen und berücksichtigen
 
-            URI destination = URI.create(nextURL + "robots.txt");
+            //TODO: methode welche die baseUrl zurückgibt
+            //get base URL #1
+            //pos = Position des 3. "/" in nextURL
+            //baseURL = nextURL.substring von Index 0 bis ausschliesslich pos bzw pos-1
+            baseUrlEndIndex = ordinalIndexOf(nextURL, "/", 3);
+            if (baseUrlEndIndex > 0) {
+                newBaseUrl = nextURL.substring(0, baseUrlEndIndex);
+            } else {
+                newBaseUrl = nextURL;
+            }
+            System.out.println("manuell erzeugte baseUrl :" + newBaseUrl);
+
+            //get base URL #2
+            url = new URL(nextURL);
+            base = url.getProtocol() + "://" + url.getHost();
+            System.out.println("baseURL = " + base);
+
+            //vorbereiten - Link zur Robots.txt erzeugen
+            URI destination = URI.create(base + "/robots.txt");
+            System.out.println("robots.txt URI = " + destination);
+            //Datei Anfrage konfigurieren
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(destination)
                     .timeout(Duration.ofMinutes(2))
                     .build();
             try {
+                //Anfrage Erfolg Verarbeitung vorbereiten (Auswahl Rückgabeform)
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                if(response.statusCode() == HttpStatus.SC_OK) {
+                //Anfrage Erfolg verarbeiten
+                if (response.statusCode() == HttpStatus.SC_OK) {
                     System.out.println("Ziel :" + destination);
                     System.out.println(response.body());
                 }
@@ -62,18 +135,21 @@ public class Main {
                 System.out.println(e.getMessage());
             }
 
+            //TODO: robots.txt auswerten
+            //TODO: robots.txt berücksichtigen
 
+            //Ausgabe von Fehlern abschalten
             webClient.getOptions().setThrowExceptionOnScriptError(false);
             webClient.getOptions().setJavaScriptEnabled(false);
             webClient.getOptions().setCssEnabled(false);
             try {
                 System.out.println("Load URL: " + nextURL);
                 System.out.println("Hello " + nextURL + "\nWelcome to AFFE!");
+                //Webseite laden
                 HtmlPage page = webClient.getPage(nextURL);
 
-                System.out.println("Hier ist jetzt das erste p :" + createDescription(page.getBaseURL(), page.getBody(), targetId));
-
-                //analyzePage(nextURL, page, targetId);
+                //Analyse der Webseite
+//                analyzePage(nextURL, page, targetId);
             } catch (Exception e) {
                 System.out.println(e.getMessage());
                 DataBaseFunction.updateTargetNextVisit(targetId, "Exception", "");
@@ -81,7 +157,7 @@ public class Main {
                 err.printStackTrace();
                 DataBaseFunction.updateTargetNextVisit(targetId, err.getClass().getSimpleName(), "");
             } finally {
-                //objekte leeren und freimachen für GarbageCollector
+                //Webclient vorbereiten für nächste Webseite
                 webClient.getCache().clear();
                 webClient.close();
                 webClient = new WebClient();
@@ -103,32 +179,28 @@ public class Main {
 //                updateTargetNextVisit(targetId, "FailingHttpStatusCodeException", "");
 //            }
 
-            // TODO: 12.01.2021 Define a practical Exit statement
-
-            stop = false;
-
-
+            //Programmdurchlauf stoppen
             if (countReadPages >= 1) {
                 stop = true;
             } else {
                 ++countReadPages;
             }
-
         }
     }
-
 
     public static int getTargetId(String currentURL) {
         int targetId = DataBaseFunction.readTargetId(currentURL);
         return targetId;
     }
 
-
     public static void analyzePage(String currentURL, HtmlPage page, int targetId) {
         HashMap<String, Integer> keywords = new HashMap<>();
 
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
         String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
+        if (description == null) {
+            description = createDescription(page.getBody());
+        }
         String title = analyzePageTitle(targetId, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
         KeywordHeaderParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
@@ -192,10 +264,8 @@ public class Main {
         return title;
     }
 
-
     /**
      * searches htmlElement for a description and returns the longest description found.
-     * TODO: 12.01.2021 Generate description in case no description is defined on website
      *
      * @param currentURL  URL of currently scanned website
      * @param htmlElement DomNode which gets scanned for description
@@ -245,13 +315,11 @@ public class Main {
         }
         //keine description auf Seite vorhanden
         if (descriptionText.length() < 1) {
-            System.out.println("Keine Beschreibung gefunden auf " + currentURL + ".");
-            descriptionText = "Fehler: Seite prüfen.";
-            //TODO: generate description in case none is found
+//            System.out.println("Keine Beschreibung gefunden auf " + currentURL + ".");
+            descriptionText = null;
         }
         return descriptionText;
     }
-
 
     /**
      * clears old keywords of targetId = FK_targetId at DB-searchresult and writes all keywords from keywordlist into
@@ -282,7 +350,8 @@ public class Main {
                 duetsch = C:\Users\DCV\Desktop\webcrawlerDeutsch.txt
                 polnisch = C:\Users\DCV\Desktop\webcrawlerPolnisch.txt
          String seitensprache  */
-        //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache / meta charset?
+        //TODO: Seitensprache ermitteln
+        //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache
         //TODO: verschiedenen Blacklist-Pfade als Konstante hinterlegen für jede Sprache
         List<String> disabledKeywords = FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
 
@@ -368,15 +437,14 @@ public class Main {
 //        sb.append("total free memory: " + format.format((freeMemory + (maxMemory - allocatedMemory)) / 1024) + "\n");
         System.out.println(sb);
     }
+
     /**
      * looks up content of the first <p></p> Element and returns it
      *
-     * @param currentURL  website to be searched
      * @param htmlElement page from the current URL
-     * @param targetId    DB.target id of current URL
-     * @return alternativ description
+     * @return alternativ description or null if no p is found
      */
-    public static String createDescription(URL currentURL, DomNode htmlElement, int targetId) {
+    public static String createDescription(DomNode htmlElement) {
 
         for (DomNode d : htmlElement.getChildren()) {
             if (d.getLocalName() != null) {
@@ -385,16 +453,32 @@ public class Main {
                     return d.getTextContent();
                 }
             }
-            String description = createDescription(currentURL, d, targetId);
+            String description = createDescription(d);
             if (description != null) {
                 return description;
             }
         }
-        return null;
+//        return null;
+        return "keine Beschreibung gefunden";
     }
-
 
     public static String analyzeRobotsTxt(URL currentURL, DomNode htmlElement, int targetId) {
         return "hallo";
+    }
+
+    /**
+     * returns the index of substr in str at nTH occurence
+     * attention : if nth time is not there, what happens?
+     * TODO: test: kein n-tes mal da
+     * @param str string which is to be checked
+     * @param substr String to look for
+     * @param n nTH occurence
+     * @return index of substr
+     */
+    public static int ordinalIndexOf(String str, String substr, int n) {
+        int pos = str.indexOf(substr);
+        while (--n > 0 && pos != -1)
+            pos = str.indexOf(substr, pos + 1);
+        return pos;
     }
 }

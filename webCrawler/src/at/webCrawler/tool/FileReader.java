@@ -9,6 +9,7 @@ import java.util.Scanner;
 
 public class FileReader {
     public static String readTextFile(String dateipfad) {
+        //TODO: throws IOException
         //File Inhalt lesen
         FileInputStream fis = null;
         String currentLine = "";
@@ -38,6 +39,7 @@ public class FileReader {
                 }
             }
         }
+        System.out.println(text);
         return text;
     }
 
