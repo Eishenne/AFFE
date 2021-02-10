@@ -79,15 +79,14 @@ public class Main {
         //-Zähler für Anzahl Programmdurchläufe
         int countReadPages = 0;
         boolean stop = false;
-        //-URL Sachen die ich brauche
-        //--URL aus String erzeugen
+        //URL
+        //-URL aus String erzeugen
         URL url = new URL("http://www.initialvalue.com");
-        //--baseURL
+        //-baseURL
         String base = "";
-        //--baseURL erzeugen manuelle funktion
+        //-baseURL erzeugen manuelle funktion
         int baseUrlEndIndex = -1;
         String newBaseUrl = null;
-
 
         //Programmstart
         while (!stop) {
@@ -98,10 +97,7 @@ public class Main {
             String nextURL = "https://www.github.com";
             int targetId = getTargetId(nextURL);
 
-            //TODO: methode welche die baseUrl zurückgibt
             //get base URL #1
-            //pos = Position des 3. "/" in nextURL
-            //baseURL = nextURL.substring von Index 0 bis ausschliesslich pos bzw pos-1
             baseUrlEndIndex = ordinalIndexOf(nextURL, "/", 3);
             if (baseUrlEndIndex > 0) {
                 newBaseUrl = nextURL.substring(0, baseUrlEndIndex);
@@ -109,7 +105,6 @@ public class Main {
                 newBaseUrl = nextURL;
             }
             System.out.println("manuell erzeugte baseUrl :" + newBaseUrl);
-
             //get base URL #2
             url = new URL(nextURL);
             base = url.getProtocol() + "://" + url.getHost();
@@ -381,6 +376,7 @@ public class Main {
 
     /**
      * lookup a href and h2 in htmlElement, prints them into console if found (rekursiv)
+     * TODO: test if style elements in h2 are recognized
      *
      * @param htmlElement contains all Elements from a specific part of a html website
      * @param baseUrl     is the URL where the htmlElements are from
@@ -449,7 +445,7 @@ public class Main {
         for (DomNode d : htmlElement.getChildren()) {
             if (d.getLocalName() != null) {
                 //Element welches wir suchen
-                if (d.getLocalName().equals("p")) {
+                if (d.getLocalName().equals("p") || d.getLocalName().equals("p%")) {
                     return d.getTextContent();
                 }
             }
