@@ -1,36 +1,31 @@
 package at.webCrawler;
 
-import at.webCrawler.parsers.KeywordHeaderParser;
+import at.webCrawler.parsers.KeywordHeadlineParser;
 import at.webCrawler.parsers.KeywordMetaParser;
+import at.webCrawler.parsers.RobotstxtParser;
 import at.webCrawler.parsers.UrlParser;
 import at.webCrawler.tool.FileReader;
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.WebClientOptions;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.util.WebClientUtils;
-import org.apache.http.HttpStatus;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
 
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.text.NumberFormat;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
-import java.net.http.HttpClient;
 
 /**
  * A F F E  -  Automatic File Find Entity
+ * Schulprojekt im Rahmen des Digital Campus Vorarlberg - Java Coding Einsteiger;
  * Ersteller:
- * Belal (Programmierung Java, Tester) (2 Monate Programmiererfahrung);
- * Henning Rüter (Projektleitung, Programmierung Java, Tester) (2 Jahre Programmiererfahrung);
- * Sedat Körpe (Leiter Website Design - Front und Backend) (2 Monate Programmiererfahrung);
+ * Belal (Programmierung Java);
+ * Henning Rüter (Projektleitung, Programmierung Java, Datenbank);
+ * Sedat Körpe (Leiter Website Design - Front und Backend);
  * Erstellt: Nov.2020 - Feb.2021;
  * Mitwirkende: Gjula Horvath, Lukas Aichbauer;
  * Unter Verwendung von: JAVA, MySQL, HTMLUnit, HTML;
@@ -47,7 +42,7 @@ public class Main {
     //
     //*************************************************************************************************
     // Ersteller:
-    // Belal
+    // Belal Schenwari
     // Henning Rüter
     // Sedat Körpe
     //
@@ -55,82 +50,43 @@ public class Main {
     // Nov.2020 - Feb.2021
     //
     // Mitwirkende:
-    // Digital Campus Vorarlberg, Gjula Horvath, Lukas Aichbauer
+    // Digital Campus Vorarlberg, Gjula Horvath, Lukas Aichbauer,
     //
     // Unter Verwendung von / Dank geht an:
-    // JAVA Oracle, IntelliJ, w3c, Codecademy, Microsoft (MySQL), nginx, HTMLUnit, PHP, Discord, Zoom,
-    // Mama - Papa - Familie der Teilnehmenden
-    // sämtliche Kinder-Beschäftigungsmittelhersteller
+    // TODO: verwendete Programme und Hilfequellen auflisten
+    // TODO: Fördermittelgeber nennen
     //*************************************************************************************************
 
+    //TODO: testing
     //TODO: import der ProgrammKlassen oder qualifiziert aufrufen. Aktuell wird beides gemacht. Warum?
     // Was ist besser?
     //TODO: import Node oder DomNode. Alternative siehe KeywordHeaderParser
+    //TODO: Erstellung von Logdatei für Fehleraufzeichnung
     public static void main(String[] args) throws IOException {
         //Vorbereitung
         //-Client für Webseiten
         WebClient webClient = new WebClient();
-        //-Client für Webdateien
-        HttpClient client = HttpClient.newBuilder()
-                .version(java.net.http.HttpClient.Version.HTTP_1_1)
-                .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(20))
-                .build();
+
         //-Zähler für Anzahl Programmdurchläufe
         int countReadPages = 0;
         boolean stop = false;
-        //URL
-        //-URL aus String erzeugen
-        URL url = new URL("http://www.initialvalue.com");
-        //-baseURL
-        String base = "";
-        //-baseURL erzeugen manuelle funktion
-        int baseUrlEndIndex = -1;
-        String newBaseUrl = null;
 
+        //**********************************************************************************
         //Programmstart
         while (!stop) {
             System.gc();
             printMemory();
+            //nächstes Crawler-Ziel wählen
 //            String nextURL = DataBaseFunction.readDB_nextTarget();
 //            String nextURL = "https://www.wetator.org/";
-            String nextURL = "https://www.github.com";
+            String nextURL = "https://www.github.com/login";
             int targetId = getTargetId(nextURL);
 
-            //get base URL #1
-            baseUrlEndIndex = ordinalIndexOf(nextURL, "/", 3);
-            if (baseUrlEndIndex > 0) {
-                newBaseUrl = nextURL.substring(0, baseUrlEndIndex);
-            } else {
-                newBaseUrl = nextURL;
-            }
-            System.out.println("manuell erzeugte baseUrl :" + newBaseUrl);
-            //get base URL #2
-            url = new URL(nextURL);
-            base = url.getProtocol() + "://" + url.getHost();
-            System.out.println("baseURL = " + base);
-
-            //vorbereiten - Link zur Robots.txt erzeugen
-            URI destination = URI.create(base + "/robots.txt");
-            System.out.println("robots.txt URI = " + destination);
-            //Datei Anfrage konfigurieren
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(destination)
-                    .timeout(Duration.ofMinutes(2))
-                    .build();
-            try {
-                //Anfrage Erfolg Verarbeitung vorbereiten (Auswahl Rückgabeform)
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                //Anfrage Erfolg verarbeiten
-                if (response.statusCode() == HttpStatus.SC_OK) {
-                    System.out.println("Ziel :" + destination);
-                    System.out.println(response.body());
-                }
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
+            //Robots.Txt Link erzeugen und abrufen
+            RobotstxtParser.analyzeRobotsTxt(getHostUrl(nextURL));
 
             //TODO: robots.txt auswerten
+            //if currentUrl = baseURL + "%" + robotsBlacklistEntry
             //TODO: robots.txt berücksichtigen
 
             //Ausgabe von Fehlern abschalten
@@ -198,7 +154,7 @@ public class Main {
         }
         String title = analyzePageTitle(targetId, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
-        KeywordHeaderParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
+        KeywordHeadlineParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
         clearAndRegisterKeywords(targetId, keywords);
         DataBaseFunction.updateTargetNextVisit(targetId, title, description);
     }
@@ -376,7 +332,7 @@ public class Main {
 
     /**
      * lookup a href and h2 in htmlElement, prints them into console if found (rekursiv)
-     * TODO: test if style elements in h2 are recognized
+     * TODO: test if style elements in HTML-Tag are recognized
      *
      * @param htmlElement contains all Elements from a specific part of a html website
      * @param baseUrl     is the URL where the htmlElements are from
@@ -455,7 +411,7 @@ public class Main {
             }
         }
 //        return null;
-        return "keine Beschreibung gefunden";
+        return "Main.createDescription: keine Beschreibung gefunden";
     }
 
     public static String analyzeRobotsTxt(URL currentURL, DomNode htmlElement, int targetId) {
@@ -463,9 +419,43 @@ public class Main {
     }
 
     /**
+     * Takes a Url in String-format and cuts away everything that isnt part of the HostUrl.
+     *
+     * @param nextURL Url as a String (ie.: http://www.mainurl.com/login/problem)
+     * @return the Host Url (ie.: http://www.mainurl.com)
+     */
+    public static String getHostUrl(String nextURL) {
+        URL hostUrl = null;
+        //-hostUrl
+        String base = "";
+
+        //-hostURL ermitteln
+//        int baseUrlEndIndex = -1;
+//        String newBaseUrl = null;
+//
+//        //get base URL #1
+//        baseUrlEndIndex = ordinalIndexOf(nextURL, "/", 3);
+//        if (baseUrlEndIndex > 0) {
+//            newBaseUrl = nextURL.substring(0, baseUrlEndIndex);
+//        } else {
+//            newBaseUrl = nextURL;
+//        }
+//        System.out.println("manuell erzeugte baseUrl :" + newBaseUrl);
+
+        //get base URL #2
+        try {
+            hostUrl = new URL(nextURL);
+            base = hostUrl.getProtocol() + "://" + hostUrl.getHost();
+        } catch (MalformedURLException mue) {
+            System.out.println("Main.getHostUrl : URL hatte kein zulässiges Format!");
+        }
+//        System.out.println("Main.hetHostUrl = " + base);
+        return base;
+    }
+
+    /**
      * returns the index of substr in str at nTH occurence
-     * attention : if nth time is not there, what happens?
-     * TODO: test: kein n-tes mal da
+     *
      * @param str string which is to be checked
      * @param substr String to look for
      * @param n nTH occurence
@@ -477,4 +467,5 @@ public class Main {
             pos = str.indexOf(substr, pos + 1);
         return pos;
     }
+
 }

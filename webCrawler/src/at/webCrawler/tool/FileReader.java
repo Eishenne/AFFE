@@ -9,7 +9,6 @@ import java.util.Scanner;
 
 public class FileReader {
     public static String readTextFile(String dateipfad) {
-        //TODO: throws IOException
         //File Inhalt lesen
         FileInputStream fis = null;
         String currentLine = "";
@@ -17,8 +16,7 @@ public class FileReader {
 
         try {
             fis = new FileInputStream(dateipfad);
-        } catch (
-                FileNotFoundException fnfe) {
+        } catch (FileNotFoundException fnfe) {
             fnfe.printStackTrace();
         }
         if (fis != null) {          //wenn File nicht existiert, soll Code nicht weiter ausgeführt werden
@@ -38,6 +36,9 @@ public class FileReader {
                     ioe.printStackTrace();
                 }
             }
+        } else {
+            //TODO: Log-Eintrag erzeugen
+            System.out.println("Der Dateipfad ist falsch.");
         }
         System.out.println(text);
         return text;
@@ -47,7 +48,7 @@ public class FileReader {
         ArrayList<String> wordlist = new ArrayList<>();
         String text = readTextFile(dateipfad);
 
-        String[] wordArray = text.split(","); //woher woran wie wann warum weshalb weswegen
+        String[] wordArray = text.split(",");
         for (int i = 0; i < wordArray.length; i++) {
             String word = wordArray[i];
             word = word.trim();
