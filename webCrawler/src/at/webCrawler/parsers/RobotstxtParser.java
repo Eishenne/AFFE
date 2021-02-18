@@ -8,23 +8,44 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class RobotstxtParser {
 
     /**
-     * Mainmethod for parsing Robots.txt. From here the different methods used are started.
+     * Mainmethod for parsing Robots.txt. From here the different methods are executed.
+     *
      * @param base Link to website/source of the robots.txt
      */
     public static void analyzeRobotsTxt(String base) {
-        String file = getRobotsTxtFile(base);
-        splitRobotsTxt(file);
+        //robots.txt von Seite (base) holen
+        String inputFile = getRobotsTxtFile(base);
+        //crawlerspezifische Anweisungen von einander trennen
+        List<String> groupList = searchAndCreateGroups(inputFile, "User-agent:");
 
+        //-crawlerspezifische Anweisungen filtern
+        for (String x : groupList) {
+//            System.out.println("analyze: " + x);
+            if (x.startsWith("AFFE") || x.startsWith(" AFFE")) {
+                //Anweisungen für AFFE auflisten
+                //Anweisungen anhand linereturn aufteilen
+                splitRobotsTxt(x);
+                //aufgeteilte Anweisungen filtern und verarbeiten
+            }
+            if (x.startsWith("*") || x.startsWith(" *")) {
+                //Anweisungen für alle crawler auflisten
+                //Anweisungen anhand linereturn aufteilen
+                splitRobotsTxt(x);
+                //aufgeteilte Anweisungen filtern und verarbeiten
+            }
+        }
     }
-
 
     /**
      * uses the java.net.HttpClient to receive the robots.txt from a website.
+     *
      * @param base Link to websites robots.txt
      * @return robots.txt as a String
      */
@@ -44,7 +65,6 @@ public class RobotstxtParser {
         //--URL zur robots.txt erzeugen
         robotsTxtUri = URI.create(base + "/robots.txt");
 //            System.out.println("robots.txt URI = " + robotsTxtUri);
-
         //--robots.txt Anfrage beschreiben
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(robotsTxtUri)
@@ -67,37 +87,48 @@ public class RobotstxtParser {
     }
 
     /**
+     * Splits a String into parts. Every Part is indicated by the separator.
+     *
+     * @param fullTxt   the entire string which needs to be split into groups
+     * @param separator indicates the beginning and end of a group
+     * @return the List of groups found
+     */
+    private static List<String> searchAndCreateGroups(String fullTxt, String separator) {
+        String inputText = fullTxt;
+        String txtGroup = "";
+        ArrayList<String> groupList = new ArrayList<>();
+
+        String[] orderList = inputText.split(separator);
+        for (int i = 0; i < orderList.length; i++) {
+            txtGroup = orderList[i];
+            groupList.add(txtGroup);
+//            System.out.println("*****************************************");
+//            System.out.println("Anweisung #" + i + " : ");
+//            System.out.println(txtGroup);
+        }
+        return groupList;
+    }
+
+    /**
      * Splits String into separate Strings for each line. Every line gets analyzed for its content.
-     * As long as there is no method to determine if the content is for another webcrawler,
-     * we do follow all given regulations. Which is a bad idea.
-     * TODO: search for "User-Agent: AFFE and get the following lines until there is another "User-Agent: "
-     * TODO: if there is no "User-Agent: AFFE" search for "User-Agent: *"
-     * TODO: only read lines which follow "User-Agent: * or AFFE" until another User-Agent is mentioned
-     * @param robotsTxtContent robots.txt as a String
+     *
+     * @param robotsTxtContent String that needs to be split per line.
      */
     private static void splitRobotsTxt(String robotsTxtContent) {
-        String entry = "";
         Scanner scanner = new Scanner(robotsTxtContent);
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
             if (line.isEmpty()) {
                 continue;
             }
-            //Zeilen lesen welche für affe und alle crawler gelten
-
-            //Zeile analysieren / einordnen
-            System.out.println(line);
             analyzeLineFormat(line);
-
         }
         scanner.close();
     }
 
-
     /**
-     * Analyzes a line of the robots.txt to check what the content wants to control. It has to single out the given
-     * value of a line.
-     * Should only handle lines that are relevant for our or every crawler.
+     * Analyzes a line of the robots.txt to check what the content wants to control.
+     * Should only handle lines that are relevant for us or every crawler.
      *
      * @param line a single line of the robots.txt
      */
@@ -106,58 +137,55 @@ public class RobotstxtParser {
         String entry = "";
         //formatierter Eintrag zum anbinden an nextTarget
         String formatedEntry = "";
-
-        //für welche crawler gelten die folgenden Anweisungen
-        //TODO: vorverlagern, hier sollen nur Zeilen landen die für uns gelten
-        if (line.toLowerCase().startsWith("user-agent")) {
-            //Eintrag erhalten
-            entry = line.substring(10).trim();
-            if ((entry.equalsIgnoreCase("affe")) || (entry.equalsIgnoreCase("*"))) {
-                //gilt für uns oder jeden webcrawler
-
-            }
-        }
-
+        //crawlerdelay
+        int delay = 0;
 
         if (line.toLowerCase().startsWith("disallow")) {
             //Pfad welcher nicht erlaubt ist
-            entry = line.substring(8).trim();
-            //
+            entry = line.substring(9).trim();
             //Form der Pfadangabe verarbeiten
             // */entry
             if (entry.startsWith("*")) {
-                entry = entry.replace("*", "");
+//                System.out.println("So gehts rein: " + entry);
+                entry = entry.replace("*", "%");
+//                System.out.println("So kommts raus: " + entry);
             }
-//            if (entry.)
             // /*entry
-            // /*/entry
+            if (entry.startsWith("/*")) {
+//                System.out.println("So gehts rein: " + entry);
+                entry = entry.replace("/*", "%");
+//                System.out.println("So kommts raus: " + entry);
+            }
             // /entry*
-            // /entry/*
-
-
-
+            if (entry.endsWith("*")) {
+//                System.out.println("So gehts rein: " + entry);
+                entry = entry.replace("*", "%");
+//                System.out.println("So kommts raus: " + entry);
+            }
+//            System.out.println("***********************************");
+            //nach formatierung den entry zur Blacklist hinzufügen
+        }
+        //delay ermitteln
+        if (line.toLowerCase().startsWith("crawl-delay:")) {
+            System.out.println("delay : " + line);
+            delay = Integer.parseInt(line.substring(12).trim());
+            System.out.println("delay bekannt : " + delay);
         }
     }
-
 
     private static String[] whateverRobotBlacklist(String robotsTxt) {
 
         String[] robotBlacklist = new String[]{};
 
-
         //Zeilenweise Anweisungen aufarbeiten
         //keine robots.txt oder robots.txt leer
-         if ((robotsTxt == null) || (robotsTxt.length() == 0)) {
+        if ((robotsTxt == null) || (robotsTxt.length() == 0)) {
             //alles erlaubt
-         }
-
-         //erste line enthält <!document HTML dingsda ===> das ist kein JimBeam
+        }
+        //erste line enthält <!document HTML dingsda ===> das ist kein JimBeam
 
         return robotBlacklist;
     }
 
-    private static void createSiteBlacklist(String robotsTxt) {
 
-
-    }
 }
