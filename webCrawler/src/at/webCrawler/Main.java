@@ -411,7 +411,7 @@ public class Main {
             }
         }
 //        return null;
-        return "Main.createDescription: keine Beschreibung gefunden";
+        return "Für diese Seite ist keine Beschreibung verfügbar.";
     }
 
     public static String analyzeRobotsTxt(URL currentURL, DomNode htmlElement, int targetId) {

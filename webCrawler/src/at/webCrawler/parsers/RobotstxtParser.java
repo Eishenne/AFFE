@@ -99,6 +99,7 @@ public class RobotstxtParser {
         ArrayList<String> groupList = new ArrayList<>();
 
         String[] orderList = inputText.split(separator);
+        //String[] orderList = inputText.split(("(?i)User-Agent"));
         for (int i = 0; i < orderList.length; i++) {
             txtGroup = orderList[i];
             groupList.add(txtGroup);
@@ -147,19 +148,19 @@ public class RobotstxtParser {
             // */entry
             if (entry.startsWith("*")) {
 //                System.out.println("So gehts rein: " + entry);
-                entry = entry.replace("*", "%");
+                entry = entry.replace("*", "");
 //                System.out.println("So kommts raus: " + entry);
             }
             // /*entry
             if (entry.startsWith("/*")) {
 //                System.out.println("So gehts rein: " + entry);
-                entry = entry.replace("/*", "%");
+                entry = entry.replace("/*", "");
 //                System.out.println("So kommts raus: " + entry);
             }
             // /entry*
             if (entry.endsWith("*")) {
 //                System.out.println("So gehts rein: " + entry);
-                entry = entry.replace("*", "%");
+                entry = entry.replace("*", "");
 //                System.out.println("So kommts raus: " + entry);
             }
 //            System.out.println("***********************************");
