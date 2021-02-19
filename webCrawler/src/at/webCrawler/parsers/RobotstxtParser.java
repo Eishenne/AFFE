@@ -1,6 +1,7 @@
 package at.webCrawler.parsers;
 
 
+import at.webCrawler.CrawlerBehaviour;
 import org.apache.http.HttpStatus;
 
 import java.net.URI;
@@ -19,7 +20,7 @@ public class RobotstxtParser {
      *
      * @param base Link to website/source of the robots.txt
      */
-    public static void analyzeRobotsTxt(String base) {
+    public static CrawlerBehaviour analyzeRobotsTxt(String base, CrawlerBehaviour currentRobot) {
         //robots.txt von Seite (base) holen
         String inputFile = getRobotsTxtFile(base);
         //crawlerspezifische Anweisungen von einander trennen
@@ -31,16 +32,17 @@ public class RobotstxtParser {
             if (x.startsWith("AFFE") || x.startsWith(" AFFE")) {
                 //Anweisungen für AFFE auflisten
                 //Anweisungen anhand linereturn aufteilen
-                splitRobotsTxt(x);
+                splitRobotsTxt(x, currentRobot);
                 //aufgeteilte Anweisungen filtern und verarbeiten
             }
             if (x.startsWith("*") || x.startsWith(" *")) {
                 //Anweisungen für alle crawler auflisten
                 //Anweisungen anhand linereturn aufteilen
-                splitRobotsTxt(x);
+                splitRobotsTxt(x, currentRobot);
                 //aufgeteilte Anweisungen filtern und verarbeiten
             }
         }
+        return currentRobot;
     }
 
     /**
@@ -112,19 +114,35 @@ public class RobotstxtParser {
 
     /**
      * Splits String into separate Strings for each line. Every line gets analyzed for its content.
+     * It fills relevant context of the robots.txt into the fields of the class object and returns the class object.
+     * TODO: testen ob es das auch wirklich tut
      *
      * @param robotsTxtContent String that needs to be split per line.
+     * @return Classobject of CrawlerBehaviour
      */
-    private static void splitRobotsTxt(String robotsTxtContent) {
+    private static CrawlerBehaviour splitRobotsTxt(String robotsTxtContent, CrawlerBehaviour currentRobot) {
         Scanner scanner = new Scanner(robotsTxtContent);
+        ArrayList<String> blacklist = new ArrayList<String>();
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
             if (line.isEmpty()) {
                 continue;
             }
-            analyzeLineFormat(line);
+//          analyzeLineDisallow(line);
+            if (line.toLowerCase().startsWith("disallow")) {
+                //CrawlerBehaviour Class objekt: array element mit disallow entry füllen
+                blacklist.add(analyzeLineDisallow(line));
+
+            }
+            if (line.toLowerCase().startsWith("crawl-delay:")) {
+                //CrawlerBehaviour Class objekt: delay füllen
+                currentRobot.setDelay(analyzeLineDelay(line));
+            }
         }
         scanner.close();
+        //CrawlerBehaviour Class objekt: zurückgeben an aufrufende methode
+        currentRobot.setSiteBlacklist(blacklist);
+        return currentRobot;
     }
 
     /**
@@ -132,14 +150,11 @@ public class RobotstxtParser {
      * Should only handle lines that are relevant for us or every crawler.
      *
      * @param line a single line of the robots.txt
+     * @return value of the disallow-line
      */
-    private static void analyzeLineFormat(String line) {
+    private static String analyzeLineDisallow(String line) {
         //unformatierter Eintrag
         String entry = "";
-        //formatierter Eintrag zum anbinden an nextTarget
-        String formatedEntry = "";
-        //crawlerdelay
-        int delay = 0;
 
         if (line.toLowerCase().startsWith("disallow")) {
             //Pfad welcher nicht erlaubt ist
@@ -165,13 +180,19 @@ public class RobotstxtParser {
             }
 //            System.out.println("***********************************");
             //nach formatierung den entry zur Blacklist hinzufügen
+//            currentRobot.setSiteBlacklist(add(entry));
         }
+        return entry;
+    }
+
+    private static int analyzeLineDelay(String line) {
+        int delay = 0;
         //delay ermitteln
-        if (line.toLowerCase().startsWith("crawl-delay:")) {
-            System.out.println("delay : " + line);
-            delay = Integer.parseInt(line.substring(12).trim());
-            System.out.println("delay bekannt : " + delay);
-        }
+
+//      System.out.println("delay : " + line);
+        delay = Integer.parseInt(line.substring(12).trim());
+//      System.out.println("delay bekannt : " + delay);
+        return delay;
     }
 
     private static String[] whateverRobotBlacklist(String robotsTxt) {

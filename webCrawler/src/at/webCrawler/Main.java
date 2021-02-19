@@ -32,8 +32,7 @@ import java.util.List;
  * Dank an: Digital Campus Vorarlberg, Stiftung, Arbeitsmarktservice, Oracle, Microsoft, nginx, HTMLUnit, GitHub,
  * Discord, Zoom, Kinder-Beschäftigungsmittelhersteller;
  * Besonderer Dank geht an die Familien und Unterstützer der Beteiligten und sämtliche Ungenannten die
- * an der Erstellung dieses Programms indirekt oder direkt Anteil hatten; Ausdrücklich auch jeder der schonmal auf
- * einen Coding-Frage-Thread im Internet geantwortet hat;
+ * an der Erstellung dieses Programms indirekt oder direkt Anteil hatten;
  */
 public class Main {
     //*************************************************************************************************
@@ -71,6 +70,9 @@ public class Main {
         int countReadPages = 0;
         boolean stop = false;
 
+        //-robotsTxt Class Object erstellen
+        CrawlerBehaviour currentRobot = new CrawlerBehaviour(0, null);
+
         //**********************************************************************************
         //Programmstart
         while (!stop) {
@@ -83,7 +85,9 @@ public class Main {
             int targetId = getTargetId(nextURL);
 
             //Robots.Txt Link erzeugen und abrufen
-            RobotstxtParser.analyzeRobotsTxt(getHostUrl(nextURL));
+            currentRobot = RobotstxtParser.analyzeRobotsTxt(getHostUrl(nextURL), currentRobot);
+
+            //analyzeRobotsTxt return auswerten
 
             //TODO: robots.txt auswerten
             //if currentUrl = baseURL + "%" + robotsBlacklistEntry
