@@ -34,8 +34,7 @@ public class RobotstxtParser {
                 //Anweisungen anhand linereturn aufteilen
                 splitRobotsTxt(x, currentRobot);
                 //aufgeteilte Anweisungen filtern und verarbeiten
-            }
-            if (x.startsWith("*") || x.startsWith(" *")) {
+            } else if (x.startsWith("*") || x.startsWith(" *")) {
                 //Anweisungen für alle crawler auflisten
                 //Anweisungen anhand linereturn aufteilen
                 splitRobotsTxt(x, currentRobot);
@@ -78,8 +77,17 @@ public class RobotstxtParser {
             //-robots.txt Anfrage Erfolg prüfen und Ergebnis verarbeiten
             if (response.statusCode() == HttpStatus.SC_OK) {
 //                System.out.println("Ziel :" + robotsTxtUri);
-                //--robots.txt in String füllen
-                robotsTxtContent = response.body();
+
+                if (response.body().isEmpty() || response.body().isBlank()) {
+                    //wenn response leer ist muss trotzdem etwas in blacklist stehen da diese sonst null zurückkommt
+                    //TODO: Seiten ohne robots.txt und falsche robots.txt verarbeiten
+                    robotsTxtContent = "User-agent: * \n" +
+                            "Crawl-delay: 0 \n" +
+                            "Disallow: 000000000";
+                } else {
+                    //--robots.txt in String füllen
+                    robotsTxtContent = response.body();
+                }
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -115,7 +123,6 @@ public class RobotstxtParser {
     /**
      * Splits String into separate Strings for each line. Every line gets analyzed for its content.
      * It fills relevant context of the robots.txt into the fields of the class object and returns the class object.
-     * TODO: testen ob es das auch wirklich tut
      *
      * @param robotsTxtContent String that needs to be split per line.
      * @return Classobject of CrawlerBehaviour
@@ -131,7 +138,10 @@ public class RobotstxtParser {
 //          analyzeLineDisallow(line);
             if (line.toLowerCase().startsWith("disallow")) {
                 //CrawlerBehaviour Class objekt: array element mit disallow entry füllen
+                //TODO: Class object befüllen anstatt der ArrayList welche später an die class übergeben wird.
+                // Wenn die Beschreibung so kompliziert ist, ist es der Vorgang auch.
                 blacklist.add(analyzeLineDisallow(line));
+//                currentRobot.getSiteBlacklist().add(analyzeLineDisallow(line));
 
             }
             if (line.toLowerCase().startsWith("crawl-delay:")) {
@@ -141,6 +151,7 @@ public class RobotstxtParser {
         }
         scanner.close();
         //CrawlerBehaviour Class objekt: zurückgeben an aufrufende methode
+        //-Ziel-ArrayList durch Hilfs-ArrayList befüllen
         currentRobot.setSiteBlacklist(blacklist);
         return currentRobot;
     }
@@ -178,9 +189,12 @@ public class RobotstxtParser {
                 entry = entry.replace("*", "");
 //                System.out.println("So kommts raus: " + entry);
             }
+            if (entry.endsWith("$")) {
+//                System.out.println("So gehts rein: " + entry);
+                entry = entry.replace("$", "");
+//                System.out.println("So kommts raus: " + entry);
+            }
 //            System.out.println("***********************************");
-            //nach formatierung den entry zur Blacklist hinzufügen
-//            currentRobot.setSiteBlacklist(add(entry));
         }
         return entry;
     }
@@ -188,7 +202,6 @@ public class RobotstxtParser {
     private static int analyzeLineDelay(String line) {
         int delay = 0;
         //delay ermitteln
-
 //      System.out.println("delay : " + line);
         delay = Integer.parseInt(line.substring(12).trim());
 //      System.out.println("delay bekannt : " + delay);

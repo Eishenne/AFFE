@@ -16,8 +16,10 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A F F E  -  Automatic File Find Entity
@@ -70,8 +72,17 @@ public class Main {
         int countReadPages = 0;
         boolean stop = false;
 
+        //letztes Ziel
+        String lastURL = "";
+
+        //robotsTxt
         //-robotsTxt Class Object erstellen
+
+        //TODO: prüfen: initialisierung mit null ergibt nullpointerException
+        //TODO: Versuch: Blacklistarray immer mit einem unsinnigen Wert initialisieren (siehe RobotsTxtParser line83)
         CrawlerBehaviour currentRobot = new CrawlerBehaviour(0, null);
+        //-Website Blacklist
+        ArrayList<String> robotBlacklist = currentRobot.getSiteBlacklist();
 
         //**********************************************************************************
         //Programmstart
@@ -79,44 +90,49 @@ public class Main {
             System.gc();
             printMemory();
             //nächstes Crawler-Ziel wählen
-//            String nextURL = DataBaseFunction.readDB_nextTarget();
+
+            String nextURL = DataBaseFunction.readDB_nextTarget();
+            //testURLs
 //            String nextURL = "https://www.wetator.org/";
-            String nextURL = "https://www.github.com/login";
+//            String nextURL = "https://www.github.com/search";
+//            String nextURL = "https://github.com/Eishenne/AFFE.git/download";
             int targetId = getTargetId(nextURL);
 
             //Robots.Txt Link erzeugen und abrufen
             currentRobot = RobotstxtParser.analyzeRobotsTxt(getHostUrl(nextURL), currentRobot);
 
             //analyzeRobotsTxt return auswerten
+            for (int i = 0; i <= currentRobot.getSiteBlacklist().size(); i++) {
+//                System.out.println(currentRobot.getSiteBlacklist().get(i));
+                // !!!!!!!!!!!!!! liefert 1 Treffer wenn * durch % ersetzt werden und 2 wenn sie entfernt werden
+                // !!!!!!!!!!!!!! /downloads liefert treffer wenn entfernt und keinen wenn /*/ durch /%/ ersetzt wird
+                if (!nextURL.contains(currentRobot.getSiteBlacklist().get(i))) {
 
-            //TODO: robots.txt auswerten
-            //if currentUrl = baseURL + "%" + robotsBlacklistEntry
-            //TODO: robots.txt berücksichtigen
+                    //nextURL ist nicht in robots.txt-Blacklist enthalten
+                    //Ausgabe von Fehlern abschalten
+                    webClient.getOptions().setThrowExceptionOnScriptError(false);
+                    webClient.getOptions().setJavaScriptEnabled(false);
+                    webClient.getOptions().setCssEnabled(false);
+                    try {
+                        System.out.println("Load URL: " + nextURL);
+                        System.out.println("Hello " + nextURL + "\nWelcome to AFFE!");
+                        //Webseite laden
+                        HtmlPage page = webClient.getPage(nextURL);
 
-            //Ausgabe von Fehlern abschalten
-            webClient.getOptions().setThrowExceptionOnScriptError(false);
-            webClient.getOptions().setJavaScriptEnabled(false);
-            webClient.getOptions().setCssEnabled(false);
-            try {
-                System.out.println("Load URL: " + nextURL);
-                System.out.println("Hello " + nextURL + "\nWelcome to AFFE!");
-                //Webseite laden
-                HtmlPage page = webClient.getPage(nextURL);
-
-                //Analyse der Webseite
-//                analyzePage(nextURL, page, targetId);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                DataBaseFunction.updateTargetNextVisit(targetId, "Exception", "");
-            } catch (Error err) {
-                err.printStackTrace();
-                DataBaseFunction.updateTargetNextVisit(targetId, err.getClass().getSimpleName(), "");
-            } finally {
-                //Webclient vorbereiten für nächste Webseite
-                webClient.getCache().clear();
-                webClient.close();
-                webClient = new WebClient();
-            }
+                        //Analyse der Webseite
+                        analyzePage(nextURL, page, targetId);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                        DataBaseFunction.updateTargetNextVisit(targetId, "Exception", "");
+                    } catch (Error err) {
+                        err.printStackTrace();
+                        DataBaseFunction.updateTargetNextVisit(targetId, err.getClass().getSimpleName(), "");
+                    } finally {
+                        //Webclient vorbereiten für nächste Webseite
+                        webClient.getCache().clear();
+                        webClient.close();
+                        webClient = new WebClient();
+                    }
 //           catch (UnknownHostException uhe) {
 //                System.out.println(uhe.getMessage());
 //                updateTargetNextVisit(targetId, "UnknownHostException", "");
@@ -134,11 +150,34 @@ public class Main {
 //                updateTargetNextVisit(targetId, "FailingHttpStatusCodeException", "");
 //            }
 
+                } else {
+                    //Seite befindet sich in robots.txt blacklist, Seite mit Datum versehen und nicht aufrufen
+//                    System.out.println("Verarbeitung der Seite durch Betreiber nicht gewünscht.");
+                    //nextvisit aufrufen und mit datum versehen
+                    DataBaseFunction.updateTargetNextVisit(targetId, "Verarbeitung nicht erwünscht",
+                            "Verarbeitung nicht erwünscht");
+                }
+            }
+
+
             //Programmdurchlauf stoppen
             if (countReadPages >= 1) {
                 stop = true;
             } else {
                 ++countReadPages;
+
+                //crawlerdelay berücksichtigen bei gleichem Host
+                if (getHostUrl(nextURL).equals(lastURL)) {
+                    try {
+                        TimeUnit.SECONDS.sleep(currentRobot.getDelay());
+                    } catch (IllegalArgumentException iae) {
+                        System.out.println("Crawlerdelay ist unzulässig.");
+                    } catch (InterruptedException ie) {
+                        System.out.println("InterruptedException thrown in Main.");
+                    }
+                }
+                //aktuellen Host für nächsten Durchlauf ablegen
+                lastURL = getHostUrl(nextURL);
             }
         }
     }
@@ -460,9 +499,9 @@ public class Main {
     /**
      * returns the index of substr in str at nTH occurence
      *
-     * @param str string which is to be checked
+     * @param str    string which is to be checked
      * @param substr String to look for
-     * @param n nTH occurence
+     * @param n      nTH occurence
      * @return index of substr
      */
     public static int ordinalIndexOf(String str, String substr, int n) {
