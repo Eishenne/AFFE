@@ -40,7 +40,7 @@ public class FileReader {
             //TODO: Log-Eintrag erzeugen
             System.out.println("Der Dateipfad ist falsch.");
         }
-        System.out.println(text);
+//        System.out.println(text);
         return text;
     }
 
@@ -53,7 +53,7 @@ public class FileReader {
             String word = wordArray[i];
             word = word.trim();
             wordlist.add(word);
-            System.out.println(word);
+//            System.out.println(word);
         }
         return wordlist;
     }

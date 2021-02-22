@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.TimeoutException;
 
 public class RobotstxtParser {
 
@@ -78,17 +79,22 @@ public class RobotstxtParser {
             if (response.statusCode() == HttpStatus.SC_OK) {
 //                System.out.println("Ziel :" + robotsTxtUri);
 
-                if (response.body().isEmpty() || response.body().isBlank()) {
+                if (response.body().isEmpty() || response.body().isBlank() || response.body().length() < 1) {
                     //wenn response leer ist muss trotzdem etwas in blacklist stehen da diese sonst null zurückkommt
                     //TODO: Seiten ohne robots.txt und falsche robots.txt verarbeiten
-                    robotsTxtContent = "User-agent: * \n" +
+                    robotsTxtContent = "Seite hat keine oder fehlerhafte robots.txt. \n" +
+                            "User-agent: * \n" +
                             "Crawl-delay: 0 \n" +
                             "Disallow: 000000000";
                 } else {
                     //--robots.txt in String füllen
                     robotsTxtContent = response.body();
                 }
+            } else if (response.statusCode() == HttpStatus.SC_REQUEST_TIMEOUT) {
+                robotsTxtContent = createAbortRobot(base);
             }
+        }  catch (IllegalArgumentException iae) {
+            robotsTxtContent = createAbortRobot(base);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -222,5 +228,12 @@ public class RobotstxtParser {
         return robotBlacklist;
     }
 
+    private static String createAbortRobot(String base) {
+        String abortRobotTxt = "* Seite nicht erreicht. Verarbeitung abgebrochen. \n" +
+                "User-agent: * \n" +
+                "Crawl-delay: 0 \n" +
+                "Disallow: " + base;
+        return abortRobotTxt;
+    }
 
 }

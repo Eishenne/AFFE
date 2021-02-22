@@ -77,12 +77,12 @@ public class Main {
 
         //robotsTxt
         //-robotsTxt Class Object erstellen
-
         //TODO: prüfen: initialisierung mit null ergibt nullpointerException
         //TODO: Versuch: Blacklistarray immer mit einem unsinnigen Wert initialisieren (siehe RobotsTxtParser line83)
         CrawlerBehaviour currentRobot = new CrawlerBehaviour(0, null);
         //-Website Blacklist
-        ArrayList<String> robotBlacklist = currentRobot.getSiteBlacklist();
+        //TODO: NullPointerExeption überwinden
+//        ArrayList<String> robotBlacklist = currentRobot.getSiteBlacklist();
 
         //**********************************************************************************
         //Programmstart
@@ -90,25 +90,39 @@ public class Main {
             System.gc();
             printMemory();
             //nächstes Crawler-Ziel wählen
-
+            //-Ziele erstes mal besuchen
             String nextURL = DataBaseFunction.readDB_nextTarget();
+            //-Ziele erneut besuchen
+            //TODO: nextvisit verarbeiten
+            if (nextURL.length() < 1) {
+                System.out.println("Bedingung falsch" );
+                //TODO: nextvisit SQL anfrage
+            }
             //testURLs
 //            String nextURL = "https://www.wetator.org/";
 //            String nextURL = "https://www.github.com/search";
 //            String nextURL = "https://github.com/Eishenne/AFFE.git/download";
             int targetId = getTargetId(nextURL);
 
+            System.out.println("Nächstes Ziel: " + nextURL);
             //Robots.Txt Link erzeugen und abrufen
-            currentRobot = RobotstxtParser.analyzeRobotsTxt(getHostUrl(nextURL), currentRobot);
-
+            //TODO: 01 try catch löschen
+//            try {
+//                currentRobot = RobotstxtParser.analyzeRobotsTxt(getHostUrl(nextURL), currentRobot);
+//            } catch (NullPointerException npe) {
+//                System.out.println("ClassObject mit null initialisiert, fix it!");
+//            }
+            //TODO: 01
             //analyzeRobotsTxt return auswerten
-            for (int i = 0; i <= currentRobot.getSiteBlacklist().size(); i++) {
+            //TODO: deaktiviert wegen NullPointerExeption
+//            for (int i = 0; i <= currentRobot.getSiteBlacklist().size(); i++) {
 //                System.out.println(currentRobot.getSiteBlacklist().get(i));
                 // !!!!!!!!!!!!!! liefert 1 Treffer wenn * durch % ersetzt werden und 2 wenn sie entfernt werden
                 // !!!!!!!!!!!!!! /downloads liefert treffer wenn entfernt und keinen wenn /*/ durch /%/ ersetzt wird
-                if (!nextURL.contains(currentRobot.getSiteBlacklist().get(i))) {
+            //TODO: deaktiviert wegen NullPointerExeption
+//                if (!nextURL.contains(currentRobot.getSiteBlacklist().get(i))) {
 
-                    //nextURL ist nicht in robots.txt-Blacklist enthalten
+                    //nextURL ist nicht von robots.txt-Blacklist betroffen
                     //Ausgabe von Fehlern abschalten
                     webClient.getOptions().setThrowExceptionOnScriptError(false);
                     webClient.getOptions().setJavaScriptEnabled(false);
@@ -120,7 +134,7 @@ public class Main {
                         HtmlPage page = webClient.getPage(nextURL);
 
                         //Analyse der Webseite
-                        analyzePage(nextURL, page, targetId);
+//                        analyzePage(nextURL, page, targetId);
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                         DataBaseFunction.updateTargetNextVisit(targetId, "Exception", "");
@@ -133,6 +147,7 @@ public class Main {
                         webClient.close();
                         webClient = new WebClient();
                     }
+                    //TODO: 02 löschen
 //           catch (UnknownHostException uhe) {
 //                System.out.println(uhe.getMessage());
 //                updateTargetNextVisit(targetId, "UnknownHostException", "");
@@ -149,15 +164,16 @@ public class Main {
 //                System.out.println(fhsce.getMessage());
 //                updateTargetNextVisit(targetId, "FailingHttpStatusCodeException", "");
 //            }
+                    //TODO: 02
 
-                } else {
+//                } else {
                     //Seite befindet sich in robots.txt blacklist, Seite mit Datum versehen und nicht aufrufen
 //                    System.out.println("Verarbeitung der Seite durch Betreiber nicht gewünscht.");
                     //nextvisit aufrufen und mit datum versehen
-                    DataBaseFunction.updateTargetNextVisit(targetId, "Verarbeitung nicht erwünscht",
-                            "Verarbeitung nicht erwünscht");
-                }
-            }
+//                    DataBaseFunction.updateTargetNextVisit(targetId, "Verarbeitung nicht erwünscht",
+//                            "Verarbeitung nicht erwünscht");
+//                }
+//            }
 
 
             //Programmdurchlauf stoppen
@@ -167,17 +183,19 @@ public class Main {
                 ++countReadPages;
 
                 //crawlerdelay berücksichtigen bei gleichem Host
-                if (getHostUrl(nextURL).equals(lastURL)) {
-                    try {
-                        TimeUnit.SECONDS.sleep(currentRobot.getDelay());
-                    } catch (IllegalArgumentException iae) {
-                        System.out.println("Crawlerdelay ist unzulässig.");
-                    } catch (InterruptedException ie) {
-                        System.out.println("InterruptedException thrown in Main.");
-                    }
-                }
+                //TODO: deaktiviert wegen NullPointerExeption
+//                if (getHostUrl(nextURL).equals(lastURL)) {
+//                    try {
+//                        TimeUnit.SECONDS.sleep(currentRobot.getDelay());
+//                    } catch (IllegalArgumentException iae) {
+//                        System.out.println("Crawlerdelay ist unzulässig.");
+//                    } catch (InterruptedException ie) {
+//                        System.out.println("InterruptedException thrown in Main.");
+//                    }
+//                }
                 //aktuellen Host für nächsten Durchlauf ablegen
-                lastURL = getHostUrl(nextURL);
+                //TODO: deaktiviert wegen NullPointerExeption
+//                lastURL = getHostUrl(nextURL);
             }
         }
     }
@@ -471,21 +489,7 @@ public class Main {
         URL hostUrl = null;
         //-hostUrl
         String base = "";
-
         //-hostURL ermitteln
-//        int baseUrlEndIndex = -1;
-//        String newBaseUrl = null;
-//
-//        //get base URL #1
-//        baseUrlEndIndex = ordinalIndexOf(nextURL, "/", 3);
-//        if (baseUrlEndIndex > 0) {
-//            newBaseUrl = nextURL.substring(0, baseUrlEndIndex);
-//        } else {
-//            newBaseUrl = nextURL;
-//        }
-//        System.out.println("manuell erzeugte baseUrl :" + newBaseUrl);
-
-        //get base URL #2
         try {
             hostUrl = new URL(nextURL);
             base = hostUrl.getProtocol() + "://" + hostUrl.getHost();
@@ -495,20 +499,4 @@ public class Main {
 //        System.out.println("Main.hetHostUrl = " + base);
         return base;
     }
-
-    /**
-     * returns the index of substr in str at nTH occurence
-     *
-     * @param str    string which is to be checked
-     * @param substr String to look for
-     * @param n      nTH occurence
-     * @return index of substr
-     */
-    public static int ordinalIndexOf(String str, String substr, int n) {
-        int pos = str.indexOf(substr);
-        while (--n > 0 && pos != -1)
-            pos = str.indexOf(substr, pos + 1);
-        return pos;
-    }
-
 }

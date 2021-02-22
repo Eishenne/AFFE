@@ -232,16 +232,16 @@ public class DataBaseFunction {
     }
 
     public static String readDB_nextTarget() {
-        String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
+        String targetUrl = "";
+//        String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
         //String targetUrl = "https://www.laendlejob.at";
         //String targetUrl = "https://vol.at";
         //targetUrl = DataBaseFunction.readDbNextTarget();
-        // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format ->
-        //  Format anpassen oder writeUrl anpassen
 
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
-            String statement = "select url from target order by lastupdate IS NULL DESC, lastupdate  limit 1";
+//            String statement = "select url from target order by lastupdate IS NULL DESC, lastupdate  limit 1";
+            String statement = "select url, lastupdate from target where lastupdate IS NULL order by lastupdate IS NULL DESC, lastupdate  limit 1";
             PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
