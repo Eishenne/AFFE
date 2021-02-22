@@ -24,14 +24,6 @@ $bindDataType = $bindDataType . "ii";
 array_push($bindParams, $page);
 array_push($bindParams, $page);
 
-/*
-$sql = "SELECT * from (SELECT title, url, description, row_number() over (order by target.id asc) rowNr  " .
-    "FROM webcrawler.target " .
-    "join webcrawler.searchresult on target.id = searchresult.FK_targetId " .
-    "where searchresult.keyword = ? " .
-    ") A where rowNr between (2*? +1) AND (2*(?+1))";
-*/
-
 $conn = new mysqli($servername, $username, $password, $dbname);
 $sql = "SELECT * from (SELECT title, url, description, row_number() over (order by searchTemp.relevanz desc) rowNr 
 FROM webcrawler.target 
