@@ -129,6 +129,25 @@ public class Main {
 
     public static void analyzePage(String currentURL, HtmlPage page, int targetId) {
         HashMap<String, Integer> keywords = new HashMap<>();
+        System.out.println("Website Language: " + page.getDocumentElement().getAttribute("lang"));
+        String seitensprache = page.getDocumentElement().getAttribute("lang");
+        seitensprache = seitensprache.trim();
+        String sprache = seitensprache.toLowerCase();
+//        sprache = seitensprache.toLowerCase();
+//        sprache = seitensprache.toLowerCase();
+        System.out.println("Seitensprache : " + seitensprache);
+//        System.out.println("Sprache : " + sprache);
+
+
+        if ((sprache.equals("en")) || (sprache.equals("en-us"))) {
+            FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerEnglisch.txt");
+            System.out.println("Englisch erkannt");
+        } else if ((sprache.equals("de")) || (sprache.equals("de-de"))) {
+            FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
+            System.out.println("deutsch erkannt");
+        } else {
+            System.out.println("Websitelanguage: Für die Sprache existiert keine Blacklist.");
+        }
 
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
         String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
@@ -288,7 +307,15 @@ public class Main {
          String seitensprache  */
         //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache / meta charset?
         //TODO: verschiedenen Blacklist-Pfade als Konstante hinterlegen für jede Sprache
-        List<String> disabledKeywords = FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
+        //       List<String> disabledKeywords = FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
+        //?
+        List<String> disabledKeywords = null;
+        try {
+            disabledKeywords = FileReader.multipleFileReader("blacklist*");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
         //alles was kein Schriftzeichen ist entfernen, ö.ä,ü bleiben bestehen
         textForKeywords = textForKeywords.replaceAll("[\\p{Punct}]+", " ")
