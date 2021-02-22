@@ -59,6 +59,8 @@ public class Main {
     //*************************************************************************************************
 
     //TODO: testing
+    //TODO: methode um bevorzugte Seitenziele als erstes zu durchsuchen
+    //TODO: methode blacklistWebsite -> welche webseiten nicht besuchen (facebook, linkedIn, google, etc.)
     //TODO: import der ProgrammKlassen oder qualifiziert aufrufen. Aktuell wird beides gemacht. Warum?
     // Was ist besser?
     //TODO: import Node oder DomNode. Alternative siehe KeywordHeaderParser
@@ -92,7 +94,11 @@ public class Main {
             printMemory();
             //nächstes Crawler-Ziel wählen
             //-Ziele erstes mal besuchen
-            String nextURL = DataBaseFunction.readDB_nextTarget();
+//            String nextURL = DataBaseFunction.readDB_nextTarget();
+            //-Ziele manuell vorgeben
+            //TODO: methode schreiben um txt Datei einzulesen
+            String nextURL = "https://www.laendlejob.at";
+
             //-Ziele erneut besuchen
             //TODO: nextvisit berücksichtigen wenn Internet vollständig erfasst
             if (nextURL.length() < 1) {

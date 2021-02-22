@@ -279,8 +279,8 @@ public class DataBaseFunction {
 
 
     public static void writeKeyword(String keyword, int relevanz, int targetId) {
-        if (keyword.length() > 165) {
-            keyword = keyword.substring(0, 165);
+        if (keyword.length() > 265) {
+            keyword = keyword.substring(0, 263);
         }
 
         try {
