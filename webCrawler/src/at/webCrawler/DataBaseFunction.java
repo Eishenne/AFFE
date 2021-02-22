@@ -1,6 +1,7 @@
 package at.webCrawler;
 
 import java.sql.*;
+import java.util.concurrent.TimeUnit;
 
 public class DataBaseFunction {
     /**
@@ -232,16 +233,22 @@ public class DataBaseFunction {
     }
 
     public static String readDB_nextTarget() {
+
         String targetUrl = "https://htmlunit.sourceforge.io/gettingStarted.html";
+
+        //TestURLs
+        //Start mit nichts
+        //String targetUrl = "";
         //String targetUrl = "https://www.laendlejob.at";
         //String targetUrl = "https://vol.at";
         //targetUrl = DataBaseFunction.readDbNextTarget();
-        // TODO: 13.01.2021 url aus DB nicht aufrufbar / unterschiedliches Format ->
-        //  Format anpassen oder writeUrl anpassen
 
         try {
             Connection con = DataBaseMaster.getInstance().getDbCon();
-            String statement = "select url from target order by lastupdate IS NULL DESC, lastupdate  limit 1";
+//            String statement = "select url from target order by lastupdate IS NULL DESC, lastupdate  limit 1";
+            String statement = "select url from target " +
+                    "where lastupdate IS NULL " +
+                    "order by lastupdate IS NULL DESC, lastupdate  limit 1";
             PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -272,8 +279,8 @@ public class DataBaseFunction {
 
 
     public static void writeKeyword(String keyword, int relevanz, int targetId) {
-        if (keyword.length() > 165) {
-            keyword = keyword.substring(0, 165);
+        if (keyword.length() > 265) {
+            keyword = keyword.substring(0, 263);
         }
 
         try {
@@ -373,5 +380,36 @@ public class DataBaseFunction {
         } finally {
             DataBaseMaster.getInstance().closeDatabase();
         }
+    }
+
+    /**
+     * Returns a URL(String) from DB where the timestamp from DB.target_lastupdate plus the minutes of
+     * DB.target_nextvisit are smaller than the currentDatetime-timestamp.
+     * TODO: to do this check, all lines with lastupdate and nextvisit have to be read
+     * TODO: -> the lines of the resultSet have to be checked if the nextvisit condition is true
+     * TODO: --> the first line for which this is true has to be returned
+     * @return DB.target_url(String) where lastupdate + nextvisit is smaller than currentDatetime
+     */
+    public static String readDB_nextTargetVisit() {
+        String targetUrl = "";
+
+        int nextvisit = 1440;
+
+        try {
+            Connection con = DataBaseMaster.getInstance().getDbCon();
+//            String statement = "select url from target order by lastupdate IS NULL DESC, lastupdate  limit 1";
+            String statement = "select url from target where lastupdate > ? order by lastupdate IS NULL DESC, lastupdate  limit 1";
+            PreparedStatement ps = con.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
+            ps.setTimestamp(1, new java.sql.Timestamp(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(nextvisit)));
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                targetUrl = rs.getString(1);
+            }
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        } finally {
+            DataBaseMaster.getInstance().closeDatabase();
+        }
+        return targetUrl;
     }
 }

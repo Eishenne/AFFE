@@ -27,7 +27,7 @@ public class KeywordMetaParser {
                     }
                 }
                 if (keywordsFound) {
-//                    System.out.println("Keywords: " + contentOfSite);
+//System.out.println("Keywords: " + contentOfSite);
                     Main.registerKeywords(contentOfSite, 4, keywords);
                 }
             }

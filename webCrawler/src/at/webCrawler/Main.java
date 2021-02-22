@@ -1,82 +1,163 @@
 package at.webCrawler;
 
-import at.webCrawler.parsers.KeywordHeaderParser;
+import at.webCrawler.parsers.KeywordHeadlineParser;
 import at.webCrawler.parsers.KeywordMetaParser;
+import at.webCrawler.parsers.RobotstxtParser;
 import at.webCrawler.parsers.UrlParser;
 import at.webCrawler.tool.FileReader;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import org.apache.http.HttpStatus;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
 
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.net.*;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.text.NumberFormat;
-import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.net.http.HttpClient;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * A F F E  -  Automatic File Find Entity
+ * Schulprojekt im Rahmen des Digital Campus Vorarlberg - Java Coding Einsteiger;
+ * Ersteller:
+ * Belal (Programmierung Java);
+ * Henning Rüter (Projektleitung, Programmierung Java, Datenbank);
+ * Sedat Körpe (Leiter Website Design - Front und Backend);
+ * Erstellt: Nov.2020 - Feb.2021;
+ * Mitwirkende: Gjula Horvath, Lukas Aichbauer;
+ * Unter Verwendung von: JAVA, MySQL, HTMLUnit, HTML;
+ * Dank an: Digital Campus Vorarlberg, Stiftung, Arbeitsmarktservice, Oracle, Microsoft, nginx, HTMLUnit, GitHub,
+ * Discord, Zoom, Kinder-Beschäftigungsmittelhersteller;
+ * Besonderer Dank geht an die Familien und Unterstützer der Beteiligten und sämtliche Ungenannten die
+ * an der Erstellung dieses Programms indirekt oder direkt Anteil hatten;
+ */
 public class Main {
+    //*************************************************************************************************
+    //
+    //                          A F F E  -  Automatic File Find Entity
+    //
+    //*************************************************************************************************
+    // Ersteller:
+    // Belal Schenwari
+    // Henning Rüter
+    // Sedat Körpe
+    //
+    // Erstellt:
+    // Nov.2020 - Feb.2021
+    //
+    // Mitwirkende:
+    // Digital Campus Vorarlberg, Gjula Horvath, Lukas Aichbauer,
+    //
+    // Unter Verwendung von / Dank geht an:
+    // TODO: verwendete Programme und Hilfequellen auflisten
+    // TODO: Fördermittelgeber nennen
+    //*************************************************************************************************
 
-    //TODO: java.sql.* anpassen auf benötigte SQL imports und diese einzeln importieren
+    //TODO: testing
+    //TODO: methode um bevorzugte Seitenziele als erstes zu durchsuchen
+    //TODO: methode blacklistWebsite -> welche webseiten nicht besuchen (facebook, linkedIn, google, etc.)
     //TODO: import der ProgrammKlassen oder qualifiziert aufrufen. Aktuell wird beides gemacht. Warum?
     // Was ist besser?
-    // TODO: import Node oder DomNode. Alternative siehe KeywordHeaderParser
+    //TODO: import Node oder DomNode. Alternative siehe KeywordHeaderParser
+    //TODO: Erstellung von Logdatei für Fehleraufzeichnung
     public static void main(String[] args) throws IOException {
+        //Vorbereitung
+        //-Client für Webseiten
         WebClient webClient = new WebClient();
 
-        HttpClient client = HttpClient.newBuilder()
-                .version(java.net.http.HttpClient.Version.HTTP_1_1)
-                .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(20))
-                .build();
-
-        int countReadPages = 0;
+        //-Zähler für Anzahl Programmdurchläufe
+        int durchlaeufe = 100;  //gibt Anzahl Durchlaeufe für Programmschleifen vor
+        int countReadPages = 0; //zaehlt Durchlaeufe
         boolean stop = false;
+
+        //letztes Ziel
+        String lastURL = "";
+
+        //robotsTxt
+        //-robotsTxt Class Object erstellen
+        //TODO: prüfen: initialisierung mit null ergibt nullpointerException
+        //TODO: Versuch: Blacklistarray immer mit einem unsinnigen Wert initialisieren (siehe RobotsTxtParser line83)
+        CrawlerBehaviour currentRobot = new CrawlerBehaviour(0, null);
+        //-Website Blacklist
+        //TODO: NullPointerExeption überwinden
+
+        //**********************************************************************************
+        //Programmstart
         while (!stop) {
             System.gc();
             printMemory();
-//            String nextURL = DataBaseFunction.readDB_nextTarget();
-            String nextURL = "https://www.wetator.org/";
-            int targetId = getTargetId(nextURL);
-            //TODO: robots.txt lesen und berücksichtigen
+            //nächstes Crawler-Ziel wählen
+            //-Ziele erstes mal besuchen
+            String nextURL = DataBaseFunction.readDB_nextTarget();
+            //-Ziele manuell vorgeben
+            //TODO: methode schreiben um txt Datei einzulesen
+//            String nextURL = "https://www.laendlejob.at/";
 
-            URI destination = URI.create(nextURL + "robots.txt");
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(destination)
-                    .timeout(Duration.ofMinutes(2))
-                    .build();
+            //-Ziele erneut besuchen
+            //TODO: nextvisit berücksichtigen wenn Internet vollständig erfasst
+            if (nextURL.length() < 1) {
+                System.out.println("Das Internet wurde aufgezeichnet.");
+                //TODO: nextvisit SQL anfrage
+                nextURL = DataBaseFunction.readDB_nextTargetVisit();
+                System.out.println("Neue Ziele sind alte Ziele : " + nextURL);
+            }
+            //testURLs
+//            String nextURL = "https://www.wetator.org/";
+//            String nextURL = "https://www.github.com/search";
+//            String nextURL = "https://github.com/Eishenne/AFFE.git/download";
+            int targetId = getTargetId(nextURL);
+
+            System.out.println("Nächstes Ziel: " + nextURL);
+            //Robots.Txt Link erzeugen und abrufen
+            //TODO: 01 try catch löschen
             try {
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                if(response.statusCode() == HttpStatus.SC_OK) {
-                    System.out.println("Ziel :" + destination);
-                    System.out.println(response.body());
+                RobotstxtParser.analyzeRobotsTxt(getHostUrl(nextURL), currentRobot);
+            } catch (NullPointerException npe) {
+                System.out.println("ClassObject mit null initialisiert, fix it!");
+            }
+            //TODO: 01
+            //analyzeRobotsTxt return auswerten
+            //TODO: deaktiviert wegen NullPointerExeption
+            boolean inBlacklist = false;
+            for (int i = 0; i < currentRobot.getSiteBlacklist().size(); i++) {
+                if (nextURL.contains(currentRobot.getSiteBlacklist().get(i))) {
+                    //Seite befindet sich in robots.txt blacklist, Seite mit Datum versehen und nicht aufrufen
+                    System.out.println("Verarbeitung der Seite durch Betreiber nicht gewünscht.");
+                    //nextvisit aufrufen und mit datum versehen
+                    DataBaseFunction.updateTargetNextVisit(targetId, "Verarbeitung nicht erwünscht",
+                            "Verarbeitung nicht erwünscht");
+                    inBlacklist = true;
+                    break;
                 }
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
+            }
+            if (inBlacklist) {
+                continue;
             }
 
+//                System.out.println(currentRobot.getSiteBlacklist().get(i));
+            // !!!!!!!!!!!!!! liefert 1 Treffer wenn * durch % ersetzt werden und 2 wenn sie entfernt werden
+            // !!!!!!!!!!!!!! /downloads liefert treffer wenn entfernt und keinen wenn /*/ durch /%/ ersetzt wird
+            //TODO: deaktiviert wegen NullPointerExeption
 
+
+            //nextURL ist nicht von robots.txt-Blacklist betroffen
+            //Ausgabe von Fehlern abschalten
             webClient.getOptions().setThrowExceptionOnScriptError(false);
             webClient.getOptions().setJavaScriptEnabled(false);
             webClient.getOptions().setCssEnabled(false);
             try {
                 System.out.println("Load URL: " + nextURL);
                 System.out.println("Hello " + nextURL + "\nWelcome to AFFE!");
+                //Webseite laden
                 HtmlPage page = webClient.getPage(nextURL);
 
-                System.out.println("Hier ist jetzt das erste p :" + createDescription(page.getBaseURL(), page.getBody(), targetId));
-
-                //analyzePage(nextURL, page, targetId);
+                //Analyse der Webseite
+                analyzePage(nextURL, page, targetId);
             } catch (Exception e) {
                 System.out.println(e.getMessage());
                 DataBaseFunction.updateTargetNextVisit(targetId, "Exception", "");
@@ -84,11 +165,12 @@ public class Main {
                 err.printStackTrace();
                 DataBaseFunction.updateTargetNextVisit(targetId, err.getClass().getSimpleName(), "");
             } finally {
-                //objekte leeren und freimachen für GarbageCollector
+                //Webclient vorbereiten für nächste Webseite
                 webClient.getCache().clear();
                 webClient.close();
                 webClient = new WebClient();
             }
+            //TODO: 02 löschen
 //           catch (UnknownHostException uhe) {
 //                System.out.println(uhe.getMessage());
 //                updateTargetNextVisit(targetId, "UnknownHostException", "");
@@ -106,26 +188,34 @@ public class Main {
 //                updateTargetNextVisit(targetId, "FailingHttpStatusCodeException", "");
 //            }
 
-            // TODO: 12.01.2021 Define a practical Exit statement
 
-            stop = false;
-
-
-            if (countReadPages >= 1) {
+            //Programmdurchlauf stoppen
+            if (countReadPages >= durchlaeufe) {
                 stop = true;
             } else {
                 ++countReadPages;
-            }
 
+                //crawlerdelay berücksichtigen bei gleichem Host
+                //TODO: robot npe: deaktiviert
+                if (getHostUrl(nextURL).equals(lastURL)) {
+                    try {
+                        TimeUnit.SECONDS.sleep(currentRobot.getDelay());
+                    } catch (IllegalArgumentException iae) {
+                        System.out.println("Crawlerdelay ist unzulässig.");
+                    } catch (InterruptedException ie) {
+                        System.out.println("InterruptedException thrown in Main.");
+                    }
+                }
+                //aktuellen Host für nächsten Durchlauf ablegen
+                //TODO: robot npe: deaktiviert
+                lastURL = getHostUrl(nextURL);
+            }
         }
     }
 
-
     public static int getTargetId(String currentURL) {
-        int targetId = DataBaseFunction.readTargetId(currentURL);
-        return targetId;
+        return DataBaseFunction.readTargetId(currentURL);
     }
-
 
     public static void analyzePage(String currentURL, HtmlPage page, int targetId) {
         HashMap<String, Integer> keywords = new HashMap<>();
@@ -151,10 +241,12 @@ public class Main {
 
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
         String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
+        if (description == null) {
+            description = createDescription(page.getBody());
+        }
         String title = analyzePageTitle(targetId, page.getBaseURL(), page.getHead(), keywords);
         KeywordMetaParser.analyzeKeywordMetaTag(currentURL, page, keywords);
-        KeywordHeaderParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
-        String RobotsText= analyzeRobotsTxt(page.getBaseURL(), page.getHead() , targetId);
+        KeywordHeadlineParser.analyzeKeywordHeaderTag(currentURL, page, keywords);
         clearAndRegisterKeywords(targetId, keywords);
         DataBaseFunction.updateTargetNextVisit(targetId, title, description);
     }
@@ -215,10 +307,8 @@ public class Main {
         return title;
     }
 
-
     /**
      * searches htmlElement for a description and returns the longest description found.
-     * TODO: 12.01.2021 Generate description in case no description is defined on website
      *
      * @param currentURL  URL of currently scanned website
      * @param htmlElement DomNode which gets scanned for description
@@ -268,13 +358,11 @@ public class Main {
         }
         //keine description auf Seite vorhanden
         if (descriptionText.length() < 1) {
-            System.out.println("Keine Beschreibung gefunden auf " + currentURL + ".");
-            descriptionText = "Fehler: Seite prüfen.";
-            //TODO: generate description in case none is found
+//            System.out.println("Keine Beschreibung gefunden auf " + currentURL + ".");
+            descriptionText = null;
         }
         return descriptionText;
     }
-
 
     /**
      * clears old keywords of targetId = FK_targetId at DB-searchresult and writes all keywords from keywordlist into
@@ -305,7 +393,8 @@ public class Main {
                 duetsch = C:\Users\DCV\Desktop\webcrawlerDeutsch.txt
                 polnisch = C:\Users\DCV\Desktop\webcrawlerPolnisch.txt
          String seitensprache  */
-        //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache / meta charset?
+        //TODO: Seitensprache ermitteln
+        //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache
         //TODO: verschiedenen Blacklist-Pfade als Konstante hinterlegen für jede Sprache
         //       List<String> disabledKeywords = FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
         //?
@@ -343,6 +432,7 @@ public class Main {
 
     /**
      * lookup a href and h2 in htmlElement, prints them into console if found (rekursiv)
+     * TODO: test if style elements in HTML-Tag are recognized
      *
      * @param htmlElement contains all Elements from a specific part of a html website
      * @param baseUrl     is the URL where the htmlElements are from
@@ -399,31 +489,30 @@ public class Main {
 //        sb.append("total free memory: " + format.format((freeMemory + (maxMemory - allocatedMemory)) / 1024) + "\n");
         System.out.println(sb);
     }
+
     /**
      * looks up content of the first <p></p> Element and returns it
      *
-     * @param currentURL  website to be searched
      * @param htmlElement page from the current URL
-     * @param targetId    DB.target id of current URL
-     * @return alternativ description
+     * @return alternativ description or null if no p is found
      */
-    public static String createDescription(URL currentURL, DomNode htmlElement, int targetId) {
+    public static String createDescription(DomNode htmlElement) {
 
         for (DomNode d : htmlElement.getChildren()) {
             if (d.getLocalName() != null) {
                 //Element welches wir suchen
-                if (d.getLocalName().equals("p")) {
+                if (d.getLocalName().equals("p") || d.getLocalName().equals("p%")) {
                     return d.getTextContent();
                 }
             }
-            String description = createDescription(currentURL, d, targetId);
+            String description = createDescription(d);
             if (description != null) {
                 return description;
             }
         }
-        return null;
+//        return null;
+        return "Für diese Seite ist keine Beschreibung verfügbar.";
     }
-
 
     public static String analyzeRobotsTxt(URL currentURL, DomNode htmlElement, int targetId) {
         String RobotsText = "";
@@ -471,5 +560,26 @@ public class Main {
         }
 
         return "RobotsText";
+    }
+
+    /**
+     * Takes a Url in String-format and cuts away everything that isnt part of the HostUrl.
+     *
+     * @param nextURL Url as a String (ie.: http://www.mainurl.com/login/problem)
+     * @return the Host Url (ie.: http://www.mainurl.com)
+     */
+    public static String getHostUrl(String nextURL) {
+        URL hostUrl = null;
+        //-hostUrl
+        String base = "";
+        //-hostURL ermitteln
+        try {
+            hostUrl = new URL(nextURL);
+            base = hostUrl.getProtocol() + "://" + hostUrl.getHost();
+        } catch (MalformedURLException mue) {
+            System.out.println("Main.getHostUrl : URL hatte kein zulässiges Format!");
+        }
+//        System.out.println("Main.hetHostUrl = " + base);
+        return base;
     }
 }

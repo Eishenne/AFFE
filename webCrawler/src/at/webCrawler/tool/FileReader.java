@@ -17,8 +17,7 @@ public class FileReader {
 
         try {
             fis = new FileInputStream(dateipfad);
-        } catch (
-                FileNotFoundException fnfe) {
+        } catch (FileNotFoundException fnfe) {
             fnfe.printStackTrace();
         }
         if (fis != null) {          //wenn File nicht existiert, soll Code nicht weiter ausgeführt werden
@@ -38,21 +37,25 @@ public class FileReader {
                     ioe.printStackTrace();
                 }
             }
+        } else {
+            //TODO: Log-Eintrag erzeugen
+            System.out.println("Der Dateipfad ist falsch.");
         }
+//        System.out.println(text);
         return text;
     }
 
     public static List<String> readBlacklistKeyword(String dateipfad) {
         ArrayList<String> wordlist = new ArrayList<>();
         String text = readTextFile(dateipfad);
+
         if (text != null && text.length() > 0) {
-            String[] wordArray = text.split(",");
-            for (int i = 0; i < wordArray.length; i++) {
-                String word = wordArray[i];
-                word = word.trim();
-                wordlist.add(word);
-                System.out.println(word);
-            }
+        String[] wordArray = text.split(",");
+        for (int i = 0; i < wordArray.length; i++) {
+            String word = wordArray[i];
+            word = word.trim();
+            wordlist.add(word);
+//            System.out.println(word);
         }
         return wordlist;
     }
