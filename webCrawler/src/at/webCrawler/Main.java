@@ -69,7 +69,8 @@ public class Main {
         WebClient webClient = new WebClient();
 
         //-Zähler für Anzahl Programmdurchläufe
-        int countReadPages = 0;
+        int durchlaeufe = 100;  //gibt Anzahl Durchlaeufe für Programmschleifen vor
+        int countReadPages = 0; //zaehlt Durchlaeufe
         boolean stop = false;
 
         //letztes Ziel
@@ -81,8 +82,8 @@ public class Main {
         //TODO: Versuch: Blacklistarray immer mit einem unsinnigen Wert initialisieren (siehe RobotsTxtParser line83)
         CrawlerBehaviour currentRobot = new CrawlerBehaviour(0, null);
         //-Website Blacklist
-        //TODO: NullPointerExeption überwinden
 //        ArrayList<String> robotBlacklist = currentRobot.getSiteBlacklist();
+        //TODO: NullPointerExeption überwinden
 
         //**********************************************************************************
         //Programmstart
@@ -93,10 +94,12 @@ public class Main {
             //-Ziele erstes mal besuchen
             String nextURL = DataBaseFunction.readDB_nextTarget();
             //-Ziele erneut besuchen
-            //TODO: nextvisit verarbeiten
+            //TODO: nextvisit berücksichtigen wenn Internet vollständig erfasst
             if (nextURL.length() < 1) {
-                System.out.println("Bedingung falsch" );
+                System.out.println("Das Internet wurde aufgezeichnet." );
                 //TODO: nextvisit SQL anfrage
+                nextURL = DataBaseFunction.readDB_nextTargetVisit();
+                System.out.println("Neue Ziele sind alte Ziele : " + nextURL);
             }
             //testURLs
 //            String nextURL = "https://www.wetator.org/";
@@ -120,6 +123,7 @@ public class Main {
                 // !!!!!!!!!!!!!! liefert 1 Treffer wenn * durch % ersetzt werden und 2 wenn sie entfernt werden
                 // !!!!!!!!!!!!!! /downloads liefert treffer wenn entfernt und keinen wenn /*/ durch /%/ ersetzt wird
             //TODO: deaktiviert wegen NullPointerExeption
+
 //                if (!nextURL.contains(currentRobot.getSiteBlacklist().get(i))) {
 
                     //nextURL ist nicht von robots.txt-Blacklist betroffen
@@ -134,7 +138,7 @@ public class Main {
                         HtmlPage page = webClient.getPage(nextURL);
 
                         //Analyse der Webseite
-//                        analyzePage(nextURL, page, targetId);
+                        analyzePage(nextURL, page, targetId);
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                         DataBaseFunction.updateTargetNextVisit(targetId, "Exception", "");
@@ -166,6 +170,7 @@ public class Main {
 //            }
                     //TODO: 02
 
+            //TODO: robot npe: deaktiviert
 //                } else {
                     //Seite befindet sich in robots.txt blacklist, Seite mit Datum versehen und nicht aufrufen
 //                    System.out.println("Verarbeitung der Seite durch Betreiber nicht gewünscht.");
@@ -177,13 +182,13 @@ public class Main {
 
 
             //Programmdurchlauf stoppen
-            if (countReadPages >= 1) {
+            if (countReadPages >= durchlaeufe) {
                 stop = true;
             } else {
                 ++countReadPages;
 
                 //crawlerdelay berücksichtigen bei gleichem Host
-                //TODO: deaktiviert wegen NullPointerExeption
+                //TODO: robot npe: deaktiviert
 //                if (getHostUrl(nextURL).equals(lastURL)) {
 //                    try {
 //                        TimeUnit.SECONDS.sleep(currentRobot.getDelay());
@@ -194,7 +199,7 @@ public class Main {
 //                    }
 //                }
                 //aktuellen Host für nächsten Durchlauf ablegen
-                //TODO: deaktiviert wegen NullPointerExeption
+                //TODO: robot npe: deaktiviert
 //                lastURL = getHostUrl(nextURL);
             }
         }
