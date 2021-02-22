@@ -219,6 +219,25 @@ public class Main {
 
     public static void analyzePage(String currentURL, HtmlPage page, int targetId) {
         HashMap<String, Integer> keywords = new HashMap<>();
+        System.out.println("Website Language: " + page.getDocumentElement().getAttribute("lang"));
+        String seitensprache = page.getDocumentElement().getAttribute("lang");
+        seitensprache = seitensprache.trim();
+        String sprache = seitensprache.toLowerCase();
+//        sprache = seitensprache.toLowerCase();
+//        sprache = seitensprache.toLowerCase();
+        System.out.println("Seitensprache : " + seitensprache);
+//        System.out.println("Sprache : " + sprache);
+
+
+        if ((sprache.equals("en")) || (sprache.equals("en-us"))) {
+            FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerEnglisch.txt");
+            System.out.println("Englisch erkannt");
+        } else if ((sprache.equals("de")) || (sprache.equals("de-de"))) {
+            FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
+            System.out.println("deutsch erkannt");
+        } else {
+            System.out.println("Websitelanguage: Für die Sprache existiert keine Blacklist.");
+        }
 
         UrlParser.analyzeHyperlinks(page.getBaseURL(), page.getBody());
         String description = analyzeDescription(page.getBaseURL(), page.getHead(), targetId);
@@ -377,7 +396,15 @@ public class Main {
         //TODO: Seitensprache ermitteln
         //TODO: Blacklist aus externem Log/Dokument entsprechend Seitensprache
         //TODO: verschiedenen Blacklist-Pfade als Konstante hinterlegen für jede Sprache
-        List<String> disabledKeywords = FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
+        //       List<String> disabledKeywords = FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
+        //?
+        List<String> disabledKeywords = null;
+        try {
+            disabledKeywords = FileReader.multipleFileReader("blacklist*");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
         //alles was kein Schriftzeichen ist entfernen, ö.ä,ü bleiben bestehen
         textForKeywords = textForKeywords.replaceAll("[\\p{Punct}]+", " ")
@@ -488,7 +515,51 @@ public class Main {
     }
 
     public static String analyzeRobotsTxt(URL currentURL, DomNode htmlElement, int targetId) {
-        return "hallo";
+        String RobotsText = "";
+        String RobotsText1 = "";
+        String RobotsText2 = "";
+
+        for (DomNode d : htmlElement.getChildren()) {
+            if (d.getLocalName() != null) {
+                //Form 1
+                //description aus <meta name="description" content="beschreibung der seite">
+                if (d.getLocalName().equals("meta")) {
+                    //---für die Anzahl seiner Parameter/Attributes
+                    for (int i = 0; i < d.getAttributes().getLength(); i++) {
+                        Node n = d.getAttributes().item(i);
+                        if ((n.getNodeName().equals("name")) && n.getNodeValue().equals("RobotsText")) {
+                            for (int j = 0; j < d.getAttributes().getLength(); j++) {
+                                Node m = d.getAttributes().item(i++);
+                                if (m.getNodeName().equals("content")) {
+                                    //Konsolenausgabe: Inhalt des HtmlTag
+//                                    System.out.println("contentNode: " + m.getNodeName());
+//                                    System.out.println("wert: " + m.getNodeValue());
+                                    RobotsText1 = m.getNodeValue();
+                                }
+                            }
+                        }
+                    }
+                }
+                //Form 2
+                if (d.getLocalName().equals("RobotsText")) {
+                    //Konsolenausgabe: Inhalt des HtmlTag
+//                    System.out.println("Beschreibung: " + d.getTextContent());
+                    RobotsText2 = d.getTextContent();
+                }
+            }
+        }
+        if (RobotsText1.length() > RobotsText2.length()) {
+            RobotsText = RobotsText1;
+        } else {
+            RobotsText = RobotsText2;
+        }
+        if (RobotsText.length() < 1) {
+            System.out.println("Keine Beschreibung gefunden auf " + currentURL + ".");
+            RobotsText = "Fehler: Seite prüfen.";
+            //TODO: generate RobotsText in case none is found
+        }
+
+        return "RobotsText";
     }
 
     /**

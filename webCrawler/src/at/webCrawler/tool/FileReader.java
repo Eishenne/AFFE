@@ -2,6 +2,7 @@ package at.webCrawler.tool;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,7 @@ public class FileReader {
         //File Inhalt lesen
         FileInputStream fis = null;
         String currentLine = "";
-        String text = null;
+        String text = "";
 
         try {
             fis = new FileInputStream(dateipfad);
@@ -48,6 +49,7 @@ public class FileReader {
         ArrayList<String> wordlist = new ArrayList<>();
         String text = readTextFile(dateipfad);
 
+        if (text != null && text.length() > 0) {
         String[] wordArray = text.split(",");
         for (int i = 0; i < wordArray.length; i++) {
             String word = wordArray[i];
@@ -56,5 +58,31 @@ public class FileReader {
 //            System.out.println(word);
         }
         return wordlist;
+    }
+
+    public static List<String> multipleFileReader(String mf) throws Exception {
+        ArrayList<String> disabledKeywords = new ArrayList<>();
+        String[] disabledKeywordsfile = {"where:\\Machintosh HD\\Users\\shenwari\\Desktop\\WebcrawlerDeutsch.txt",
+                "where:\\Machintosh HD\\Users\\shenwari\\Desktop\\WebcrawlerEnglisch.txt"};
+        for (String filename : disabledKeywordsfile) {
+            disabledKeywords.addAll(FileReader.readBlacklistKeyword(filename));
+        }
+        if(disabledKeywords.size() == 0){
+            throw new Exception("Blacklist Keywords wurden nicht gefunden. Bitte um die Überprüfung der Dateipfaden;");
+        }
+        return disabledKeywords;
+    }
+
+    public static void creatLogEntry(String LogEintrag) {
+        try {
+            FileWriter mywriter = new FileWriter("where:\\Machintosh HD\\Users\\shenwari\\Desktop\\txtfile.txt", true);
+            mywriter.write(LogEintrag, 0, LogEintrag.length());
+            mywriter.write("\n", 0, 1);
+            mywriter.close();
+            System.out.println("Successfully wrote to the file.");
+        } catch (IOException e) {
+            System.out.println("An error occurred");
+            e.printStackTrace();
+        }
     }
 }
