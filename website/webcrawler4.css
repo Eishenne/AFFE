@@ -3,23 +3,20 @@
   }
   
   body {
-    font-family: Arial, Helvetica, sans-serif;
-    
+    font-family: Arial, Helvetica, sans-serif;  
   }
-  
-  
+
   /* Style the header */
   .header {
     overflow: hidden;
     background-color:white;
     padding: 20px 10px;
-    text-align: center;
-    
+    text-align: center; 
   }
+
   .flex-container {
     display: flex;
     justify-content: center;
-    
   }
   
   .flex-container > div {
@@ -39,21 +36,15 @@
     padding: 10px;
     border: none;
   }
+
   logo {
     width: 24px;
     height: 24px;
-   
   }
 
   .input-group{
-
     text-align: center;
-
-
-  }
-  
-
-  
+  } 
   
   input[type=text] {
     width: 130px;
@@ -67,17 +58,12 @@
     padding: 12px 5px 12px 40px;
     -webkit-transition: width 0.4s ease-in-out;
     transition: width 0.4s ease-in-out;
-    
-    
   }
   
   input[type=text]:focus {
     width: 100%;
   }
-  
-  
-  
- 
+
   article {
     background-color: white;
     border: none;
@@ -91,23 +77,21 @@
     -ms-word-break: break-all;
    word-break: break-all;
    word-break: break-word;
-  -ms-hyphens: auto;
-  -moz-hyphens: auto;
-  -webkit-hyphens: auto;
-  hyphens: auto;
-  padding-bottom: 10px;
-  margin-block-end: 10px;
- 
-
+   -ms-hyphens: auto;
+   -moz-hyphens: auto;
+   -webkit-hyphens: auto;
+   hyphens: auto;
+   padding-bottom: 10px;
+   margin-block-end: 10px;
   }
+
   h3::first-letter {
     font-size: 150%;
-    color: #4678a3;}
+    color: #4678a3;
+  }
     
-
   #demo2 {
     text-align: center;
-  
   }
     
   button{
@@ -118,20 +102,11 @@
     margin-top: 15px;
     margin-block-end: 20px;
     border: 2px solid black;
-    
-
-    
   }
- 
-   
- 
   
   a:link {
     text-decoration: none;
     color:#00278e;
-    
-  
-  
   }
   
   a:visited {
@@ -141,7 +116,6 @@
   
   a:hover {
     text-decoration: underline;
-  
   }
   
   a:active {
@@ -158,18 +132,16 @@
     background-color:  #4678a3;
     overflow-x: hidden;
     transition: 0.5s;
-    padding-top: 60px;
-    
+    padding-top: 60px; 
   }
+
   .sidenav a {
     padding: 8px 8px 8px 32px;
     text-decoration: none;
     font-size: 35px;
     color:white;
     display: block;
-    transition: 0.3s;
-  
-    
+    transition: 0.3s; 
   }
   
   .sidenav a:hover {
@@ -182,18 +154,16 @@
     right: 25px;
     font-size: 36px;
     margin-left: 50px;
-   
   }
   
-.margin-top-bottom {
-  margin-top: 16px;
-  margin-bottom: 16px;
-}
+  .margin-top-bottom {
+   margin-top: 16px;
+   margin-bottom: 16px;
+  }
 
   @media screen and (min-width: 450px) {
     .sidenav {padding-top: 100px;}
     .sidenav a {font-size: 25px;}
-    
   }
 
   #myBtn {
@@ -212,15 +182,10 @@
     border-radius: 15px;
     border-color:black;
     margin-block-end: 10px;
-    
   }
   
   #myBtn:hover {
-    background-color: #555;
-  
- 
-  
-   
+    background-color: #555;  
   }
 
  
