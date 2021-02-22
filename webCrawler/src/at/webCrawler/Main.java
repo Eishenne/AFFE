@@ -94,10 +94,10 @@ public class Main {
             printMemory();
             //nächstes Crawler-Ziel wählen
             //-Ziele erstes mal besuchen
-//            String nextURL = DataBaseFunction.readDB_nextTarget();
+            String nextURL = DataBaseFunction.readDB_nextTarget();
             //-Ziele manuell vorgeben
             //TODO: methode schreiben um txt Datei einzulesen
-            String nextURL = "https://www.laendlejob.at";
+//            String nextURL = "https://www.laendlejob.at/";
 
             //-Ziele erneut besuchen
             //TODO: nextvisit berücksichtigen wenn Internet vollständig erfasst
