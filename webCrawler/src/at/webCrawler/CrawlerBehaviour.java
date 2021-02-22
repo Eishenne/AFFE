@@ -4,12 +4,12 @@ import java.util.ArrayList;
 
 public class CrawlerBehaviour {
     private int delay;
-    private ArrayList<String> SiteBlacklist;
+    private ArrayList<String> siteBlacklist;
 
 
     public CrawlerBehaviour(int delay, ArrayList<String> siteBlacklist) {
         this.delay = delay;
-        SiteBlacklist = siteBlacklist;
+        this.siteBlacklist = siteBlacklist;
     }
 
     public int getDelay() {
@@ -21,10 +21,10 @@ public class CrawlerBehaviour {
     }
 
     public ArrayList<String> getSiteBlacklist() {
-        return SiteBlacklist;
+        return siteBlacklist;
     }
 
     public void setSiteBlacklist(ArrayList<String> siteBlacklist) {
-        SiteBlacklist = siteBlacklist;
+        this.siteBlacklist = siteBlacklist;
     }
 }

@@ -40,8 +40,8 @@
 
     <?php
     $servername = "localhost";
-    $username = "root";
-    $password = "Sami2008!";
+    $username = "abfrager";
+    $password = "abfrager";
     $dbname = "webcrawler";
 
     // Create connection
