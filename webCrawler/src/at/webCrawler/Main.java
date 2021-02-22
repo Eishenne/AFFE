@@ -229,10 +229,10 @@ public class Main {
 //        System.out.println("Sprache : " + sprache);
 
 
-        if ((sprache.equals("en")) || (sprache.equals("en-us"))) {
+        if ((sprache.matches("en.*"))) {
             FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerEnglisch.txt");
             System.out.println("Englisch erkannt");
-        } else if ((sprache.equals("de")) || (sprache.equals("de-de"))) {
+        } else if ((sprache.matches("de.*"))) {
             FileReader.readBlacklistKeyword("C:\\Users\\DCV\\Desktop\\webcrawlerDeutsch.txt");
             System.out.println("deutsch erkannt");
         } else {
@@ -400,7 +400,7 @@ public class Main {
         //?
         List<String> disabledKeywords = null;
         try {
-            disabledKeywords = FileReader.multipleFileReader("blacklist*");
+            disabledKeywords = FileReader.multipleFileReader("webcrawlerBlacklist.*txt");
         } catch (Exception e) {
             e.printStackTrace();
         }

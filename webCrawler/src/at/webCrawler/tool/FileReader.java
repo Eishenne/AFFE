@@ -1,9 +1,6 @@
 package at.webCrawler.tool;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -50,33 +47,39 @@ public class FileReader {
         String text = readTextFile(dateipfad);
 
         if (text != null && text.length() > 0) {
-        String[] wordArray = text.split(",");
-        for (int i = 0; i < wordArray.length; i++) {
-            String word = wordArray[i];
-            word = word.trim();
-            wordlist.add(word);
+            String[] wordArray = text.split(",");
+            for (int i = 0; i < wordArray.length; i++) {
+                String word = wordArray[i];
+                word = word.trim();
+                wordlist.add(word);
 //            System.out.println(word);
+            }
         }
         return wordlist;
     }
 
     public static List<String> multipleFileReader(String mf) throws Exception {
         ArrayList<String> disabledKeywords = new ArrayList<>();
-        String[] disabledKeywordsfile = {"where:\\Machintosh HD\\Users\\shenwari\\Desktop\\WebcrawlerDeutsch.txt",
-                "where:\\Machintosh HD\\Users\\shenwari\\Desktop\\WebcrawlerEnglisch.txt"};
-        for (String filename : disabledKeywordsfile) {
-            disabledKeywords.addAll(FileReader.readBlacklistKeyword(filename));
+        File f = new File("C:\\Users\\DCV\\Desktop");
+        File[] disabledKeywordsfile = f.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.getName().matches(mf);
+            }
+        });
+        for (File file : disabledKeywordsfile) {
+            disabledKeywords.addAll(FileReader.readBlacklistKeyword(file.getAbsolutePath()));
         }
-        if(disabledKeywords.size() == 0){
+        if (disabledKeywords.size() == 0) {
             throw new Exception("Blacklist Keywords wurden nicht gefunden. Bitte um die Überprüfung der Dateipfaden;");
         }
         return disabledKeywords;
     }
 
-    public static void creatLogEntry(String LogEintrag) {
+    public static void creatLogEntry(String logEintrag) {
         try {
             FileWriter mywriter = new FileWriter("where:\\Machintosh HD\\Users\\shenwari\\Desktop\\txtfile.txt", true);
-            mywriter.write(LogEintrag, 0, LogEintrag.length());
+            mywriter.write(logEintrag, 0, logEintrag.length());
             mywriter.write("\n", 0, 1);
             mywriter.close();
             System.out.println("Successfully wrote to the file.");
@@ -86,3 +89,4 @@ public class FileReader {
         }
     }
 }
+
